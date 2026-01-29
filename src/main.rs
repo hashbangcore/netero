@@ -1,3 +1,5 @@
+mod core;
+
 fn main() {
-    println!("Hello, world!");
+    println!("{}", core::get_api_key());
 }
