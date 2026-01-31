@@ -1,6 +1,6 @@
 [formatter.rust]
-command = "rustfmt"
-options = []
+command = "cargo"
+options = ["fmt", "--"]
 includes = [ "*.rs" ]
 excludes = []
 priority = 0
