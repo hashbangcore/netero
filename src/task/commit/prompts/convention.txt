@@ -1,0 +1,12 @@
+build: changes in build system or external dependencies
+chore: maintenance tasks without functional impact
+ci: changes in CI/CD configuration
+docs: documentation changes
+feat: new functionality
+fix: bug fix
+perf: performance improvements
+refactor: refactoring without changing functionality
+revert: revert a previous commit
+style: formatting, spaces, semicolons, without changing logic
+test: add or modify tests
+wip: work in progress, ongoing development

@@ -1,10 +1,10 @@
 use ron::de::from_str;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::fs;
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct Prompts {
-    convention: HashMap<String, String>,
+    convention: String,
     context: String,
     hint: String,
     instruction: String,
@@ -12,52 +12,32 @@ struct Prompts {
     staged: String,
 }
 
-trait CoverPrompt {
-    fn cover(&self, title: &str) -> String;
+fn expand_prompt(path: &str) -> String {
+    fs::read_to_string(path)
+        .unwrap_or_else(|_| format!("Error: No se pudo leer el archivo {}", path))
 }
 
-impl CoverPrompt for String {
-    fn cover(&self, title: &str) -> String {
-        format!(
-            "### START {} ###\n{}\n### END {} ###",
-            title.to_uppercase(),
-            self,
-            title.to_uppercase()
-        )
-    }
-}
-
-fn read_prompt_file() -> Prompts {
-    let ron_data = include_str!("prompt.ron");
-    from_str(ron_data).expect("Error parseando RON")
-}
-
-fn get_convention() -> String {
-    let prompts = read_prompt_file();
-
-    prompts
-        .convention
-        .iter()
-        .map(|(k, v)| format!("{}: {}", k, v))
-        .collect::<Vec<_>>()
-        .join("\n")
+fn cover(title: &str, content: &str) -> String {
+    let t = title.to_uppercase();
+    format!("### START {t} ###\n{content}\n### END {t} ###")
 }
 
 pub fn generate() -> String {
-    let prompts = read_prompt_file();
+    let ron_data = include_str!("prompt.ron");
+    let p: Prompts = from_str(ron_data).expect("Error parseando RON");
 
     let sections = [
-        ("CONVENTION", &get_convention()),
-        ("PROJECT CONTEXT", &prompts.context),
-        ("USER HINT", &prompts.hint),
-        ("INSTRUCTION", &prompts.instruction),
-        ("SKELETON", &prompts.skeleton),
-        ("STAGED CHANGES", &prompts.staged),
+        ("CONVENTION", expand_prompt(&p.convention)),
+        ("PROJECT CONTEXT", p.context),
+        ("USER HINT", p.hint),
+        ("INSTRUCTION", expand_prompt(&p.instruction)),
+        ("SKELETON", expand_prompt(&p.skeleton)),
+        ("STAGED CHANGES", expand_prompt(&p.staged)),
     ];
 
     sections
         .iter()
-        .map(|(title, content)| content.cover(title))
+        .map(|(title, content)| cover(title, content))
         .collect::<Vec<_>>()
         .join("\n\n")
 }

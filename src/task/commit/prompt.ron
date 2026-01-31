@@ -1,21 +1,8 @@
 Prompts(
-    context: "Context of project",
-    convention: {
-        "build": "changes in build system or external dependencies",
-        "chore": "maintenance tasks without functional impact",
-        "ci": "changes in CI/CD configuration",
-        "docs": "documentation changes",
-        "feat": "new functionality",
-        "fix": "bug fix",
-        "perf": "performance improvements",
-        "refactor": "refactoring without changing functionality",
-        "revert": "revert a previous commit",
-        "style": "formatting, spaces, semicolons, without changing logic",
-        "test": "add or modify tests",
-        "wip": "work in progress, ongoing development",
-    },
-    hint: "User hint",
-    staged: "Staged changes",
-    instruction: "Your task is to generate a commit message following staged changes section.\nFollow exactly the custom commit convention provided.\nGenerate ONLY the commit message text that follows the skeleton and the project convention.\nBreak into multiple lines of around 50 characters each.\nDo not add explanations, markdown, or extra commentary.",
-    skeleton:"\n<type>: <short description>\n<blank line>\n<longer description explaining what changed and why,\nwrapped at roughly 50 characters per line>",
+    context: "",
+    convention: "src/task/commit/prompts/convention.txt",
+    hint: "",
+    staged: "src/task/commit/prompts/diff_example.txt",
+    instruction: "src/task/commit/prompts/instruction.txt",
+    skeleton: "src/task/commit/prompts/skeleton.txt"
 )

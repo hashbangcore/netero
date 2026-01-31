@@ -1,0 +1,3 @@
+<type>: <short_summary_max_50_chars>
+<blank_line>
+<detailed_bullet_points_wrapped_at_50_chars>

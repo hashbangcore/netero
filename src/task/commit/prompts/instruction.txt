@@ -1,0 +1,6 @@
+Your task is to generate a conventional commit message based on the "STAGED CHANGES" provided.
+1. Use the IMPERATIVE mood (e.g., "fix bug" not "fixed bug").
+2. The first line (subject) MUST NOT exceed 50 characters.
+3. The body MUST be wrapped at exactly 50 characters per line.
+4. Focus on the "WHY" and "WHAT", not the literal "I removed this line".
+5. Generate ONLY the raw text. No markdown, no "Sure, here is...", no code blocks.
