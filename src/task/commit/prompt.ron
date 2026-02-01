@@ -1,7 +1,5 @@
 Prompts(
-    context: "",
     convention: "src/task/commit/prompts/convention.txt",
-    hint: "",
     staged: "src/task/commit/prompts/diff_example.txt",
     instruction: "src/task/commit/prompts/instruction.txt",
     skeleton: "src/task/commit/prompts/skeleton.txt"
