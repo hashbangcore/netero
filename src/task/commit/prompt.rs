@@ -48,11 +48,11 @@ pub fn generate(hint: Option<&str>) -> String {
     let staged_changes = staged_changes();
 
     let sections = [
+        ("INSTRUCTION", expand_prompt(&p.instruction)),
         ("CONVENTION", expand_prompt(&p.convention)),
+        ("SKELETON", expand_prompt(&p.skeleton)),
         ("PROJECT CONTEXT", context),
         ("USER HINT", user_hint.to_string()),
-        ("INSTRUCTION", expand_prompt(&p.instruction)),
-        ("SKELETON", expand_prompt(&p.skeleton)),
         ("STAGED CHANGES", staged_changes),
     ];
 
