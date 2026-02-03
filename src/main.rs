@@ -23,17 +23,17 @@ enum Commands {
     Chat { texto: String },
 }
 
-pub struct AppContext {
-    pub ai: core::Service,
-    pub verbose: bool,
-}
+//pub struct AppContext {
+//pub ai: core::core::Service,
+//pub verbose: bool,
+//}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
     let ai = core::Service::new(Some(&args.provider));
 
-    let ctx = AppContext {
+    let ctx = core::CliContext {
         ai,
         verbose: args.verbose,
     };
@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn execute(ctx: &AppContext, args: Cli) -> Result<(), Box<dyn std::error::Error>> {
+async fn execute(ctx: &core::CliContext, args: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match args.command {
         Some(Commands::Commit { hint }) => generate_commit(ctx, hint.as_deref()).await?,
         Some(Commands::Chat { texto }) => send_chat(ctx, &texto).await?,
@@ -60,7 +60,7 @@ async fn execute(ctx: &AppContext, args: Cli) -> Result<(), Box<dyn std::error::
 }
 
 async fn generate_commit(
-    ctx: &AppContext,
+    ctx: &core::CliContext,
     hint: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let prompt = task::commit::prompt::generate(hint);
@@ -76,7 +76,10 @@ async fn generate_commit(
     Ok(())
 }
 
-async fn send_chat(ctx: &AppContext, mensaje: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn send_chat(
+    ctx: &core::CliContext,
+    mensaje: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let user = env::var("USER").unwrap_or("user".to_string());
 
     if ctx.verbose {

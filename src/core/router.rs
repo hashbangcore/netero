@@ -1,39 +1,5 @@
+use crate::core::types::*;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize)]
-struct Message {
-    role: String,
-    content: String,
-}
-
-#[derive(Serialize)]
-struct ChatRequest {
-    model: String,
-    messages: Vec<Message>,
-}
-
-#[derive(Deserialize)]
-struct ChatResponse {
-    choices: Vec<Choice>,
-}
-
-#[derive(Deserialize)]
-struct Choice {
-    message: ResponseMessage,
-}
-
-#[derive(Deserialize)]
-struct ResponseMessage {
-    content: String,
-}
-
-pub struct Service {
-    http: Client,
-    apikey: String,
-    endpoint: String,
-    model: String,
-}
 
 impl Service {
     pub fn new(provider: Option<&str>) -> Self {
