@@ -3,28 +3,38 @@ use reqwest::Client;
 
 impl Service {
     pub fn new(provider: Option<&str>) -> Self {
-        let provider = provider.unwrap_or("codestral");
+        let provider = provider.unwrap();
 
         let (envar, endpoint, model) = match provider {
             "codestral" => (
-                "CODE_API_KEY",
+                Some("CODE_API_KEY"),
                 "https://codestral.mistral.ai/v1/chat/completions",
                 "codestral-latest",
             ),
 
             "openrouter" => (
-                "OPENROUTER_API_KEY",
+                Some("OPENROUTER_API_KEY"),
                 "https://openrouter.ai/api/v1/chat/completions",
                 "openrouter/free",
             ),
+
+            "ollama" => (
+                None,
+                "http://localhost:11434/v1/chat/completions",
+                "qwen2:0.5b",
+            ),
+
             _ => todo!("{}", provider),
         };
 
-        let apikey = std::env::var(envar.to_owned()).expect("variable not found.");
+        let apikey = match envar {
+            Some(var) => Some(std::env::var(var).expect("API key environment variable not found")),
+            None => None,
+        };
 
         Self {
             http: Client::new(),
-            apikey: apikey,
+            apikey,
             endpoint: endpoint.to_owned(),
             model: model.to_owned(),
         }
@@ -39,15 +49,13 @@ impl Service {
             }],
         };
 
-        let response = self
-            .http
-            .post(&self.endpoint)
-            .header("Authorization", format!("Bearer {}", self.apikey))
-            .json(&body)
-            .send()
-            .await?
-            .json::<ChatResponse>()
-            .await?;
+        let mut req = self.http.post(&self.endpoint).json(&body);
+
+        if let Some(key) = &self.apikey {
+            req = req.header("Authorization", format!("Bearer {}", key));
+        }
+
+        let response = req.send().await?.json::<ChatResponse>().await?;
 
         Ok(response.choices[0].message.content.clone())
     }

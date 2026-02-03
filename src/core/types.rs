@@ -3,13 +3,14 @@ use serde::{Deserialize, Serialize};
 
 pub struct Service {
     pub http: Client,
-    pub apikey: String,
+    pub apikey: Option<String>,
     pub endpoint: String,
     pub model: String,
 }
 pub struct CliContext {
     pub ai: Service,
     pub verbose: bool,
+    pub provider: String,
 }
 
 #[derive(Serialize)]
