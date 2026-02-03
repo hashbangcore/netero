@@ -10,6 +10,8 @@ struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
     texto: Option<String>,
+    #[arg(long, short, default_value = "codestral")]
+    provider: String,
 }
 
 #[derive(Subcommand, Debug)]
@@ -20,15 +22,15 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let ai = core::Model::new();
     let args = Cli::parse();
+    let ai = core::Service::new(Some(&args.provider));
 
     execute(&ai, args).await?;
 
     Ok(())
 }
 
-async fn execute(ai: &core::Model, args: Cli) -> Result<(), Box<dyn std::error::Error>> {
+async fn execute(ai: &core::Service, args: Cli) -> Result<(), Box<dyn std::error::Error>> {
     match args.command {
         Some(Commands::Commit { hint }) => generate_commit(ai, hint.as_deref()).await?,
 
@@ -47,7 +49,7 @@ async fn execute(ai: &core::Model, args: Cli) -> Result<(), Box<dyn std::error::
 }
 
 async fn generate_commit(
-    ai: &core::Model,
+    ai: &core::Service,
     hint: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let prompt = task::commit::prompt::generate(hint);
@@ -61,7 +63,7 @@ async fn generate_commit(
     Ok(())
 }
 
-async fn send_chat(ai: &core::Model, mensaje: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn send_chat(ai: &core::Service, mensaje: &str) -> Result<(), Box<dyn std::error::Error>> {
     let respuesta = ai.complete(mensaje).await?;
     println!("{}", respuesta);
     Ok(())

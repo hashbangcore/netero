@@ -1,3 +1,3 @@
 mod router;
 
-pub use router::Model;
+pub use router::Service;

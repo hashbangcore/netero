@@ -28,34 +28,55 @@ struct ResponseMessage {
     content: String,
 }
 
-pub struct Model {
+pub struct Service {
     http: Client,
-    api_key: String,
+    apikey: String,
+    endpoint: String,
+    model: String,
 }
 
-impl Model {
-    pub fn new() -> Self {
-        let key =
-            std::env::var("CODE_API_KEY").expect("Variable de entorno CODE_API_KEY no configurada");
+impl Service {
+    pub fn new(provider: Option<&str>) -> Self {
+        let provider = provider.unwrap_or("codestral");
+
+        let (envar, endpoint, model) = match provider {
+            "codestral" => (
+                "CODE_API_KEY",
+                "https://codestral.mistral.ai/v1/chat/completions",
+                "codestral-latest",
+            ),
+
+            "openrouter" => (
+                "OPENROUTER_API_KEY",
+                "https://openrouter.ai/api/v1/chat/completions",
+                "openrouter/free",
+            ),
+            _ => todo!("{}", provider),
+        };
+
+        let apikey = std::env::var(envar.to_owned()).expect("variable not found.");
+
         Self {
             http: Client::new(),
-            api_key: key,
+            apikey: apikey,
+            endpoint: endpoint.to_owned(),
+            model: model.to_owned(),
         }
     }
 
-    pub async fn complete(&self, input: &str) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn complete(&self, content: &str) -> Result<String, Box<dyn std::error::Error>> {
         let body = ChatRequest {
-            model: "codestral-latest".to_string(),
+            model: self.model.clone(),
             messages: vec![Message {
                 role: "user".to_string(),
-                content: input.to_string(),
+                content: content.to_string(),
             }],
         };
 
         let response = self
             .http
-            .post("https://codestral.mistral.ai/v1/chat/completions")
-            .header("Authorization", format!("Bearer {}", self.api_key))
+            .post(&self.endpoint)
+            .header("Authorization", format!("Bearer {}", self.apikey))
             .json(&body)
             .send()
             .await?
