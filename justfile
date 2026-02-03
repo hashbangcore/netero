@@ -2,4 +2,4 @@ set fallback := true
 set unstable := true
 
 install:
-  cargo install --path . --bin rave-dev
+  cargo install --path . --bin natu

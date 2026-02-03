@@ -23,11 +23,6 @@ enum Commands {
     Chat { texto: String },
 }
 
-//pub struct AppContext {
-//pub ai: core::core::Service,
-//pub verbose: bool,
-//}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
