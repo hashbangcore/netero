@@ -1,31 +1,13 @@
 mod core;
 mod task;
 
-use clap::{Parser, Subcommand};
+use clap::Parser;
+use core::interfaz;
 use std::env;
-
-#[derive(Parser, Debug)]
-#[command(name = "rave")]
-#[command(author, version, about)]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
-    prompt: Option<String>,
-    #[arg(long, short, default_value = "codestral")]
-    provider: String,
-    #[arg(short, long, global = true)]
-    verbose: bool,
-}
-
-#[derive(Subcommand, Debug)]
-enum Commands {
-    Commit { hint: Option<String> },
-    Chat { prompt: String },
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Cli::parse();
+    let args = interfaz::Cli::parse();
     let ai = core::Service::new(Some(&args.provider));
 
     let ctx = core::CliContext {
@@ -39,10 +21,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn execute(ctx: &core::CliContext, args: Cli) -> Result<(), Box<dyn std::error::Error>> {
+async fn execute(
+    ctx: &core::CliContext,
+    args: interfaz::Cli,
+) -> Result<(), Box<dyn std::error::Error>> {
     match args.command {
-        Some(Commands::Commit { hint }) => generate_commit(ctx, hint.as_deref()).await?,
-        Some(Commands::Chat { prompt }) => send_chat(ctx, &prompt).await?,
+        Some(interfaz::Commands::Commit { hint }) => generate_commit(ctx, hint.as_deref()).await?,
+        Some(interfaz::Commands::Prompt { input }) => send_chat(ctx, &input).await?,
         None => {
             if let Some(prompt) = args.prompt {
                 send_chat(ctx, &prompt).await?;
