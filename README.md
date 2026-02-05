@@ -105,3 +105,7 @@ ps aux | netero "Which processes are consuming the most resources?"
 ```sh
 ss -tulpen | netero "Summarize active listening sockets" | mdless
 ```
+
+## License
+
+BSD 2-Clause
