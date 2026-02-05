@@ -1,4 +1,4 @@
-# Natu
+# Netero
 
 Command-line assistant written in Rust.
 
@@ -14,7 +14,7 @@ The interface, behavior, and internal structure are incomplete and subject to ch
 CLI for interacting with language models.
 
 ```
-Usage: natu [OPTIONS] [PROMPT] [COMMAND]
+Usage: netero [OPTIONS] [PROMPT] [COMMAND]
 ```
 
 ### Commands

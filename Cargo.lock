@@ -846,7 +846,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "natu"
+name = "netero"
 version = "0.1.0"
 dependencies = [
  "clap",
