@@ -1,13 +1,24 @@
 # Netero
 
-Command-line assistant written in Rust.
+A command-line LLM assistant written in Rust, designed for terminal-centric workflows.
 
-This is an experimental project created while learning Rust.
-Its purpose is to explore basic integration with large language models (LLMs)
-from a terminal environment.
+## Project status
 
-The interface, behavior, and internal structure are incomplete and subject to change.
+Netero is experimental software. Features are incomplete and subject to change.
 
+## Environment variables
+
+Netero requires provider-specific environment variables to be configured.
+
+* `CODE_API_KEY`
+  API key used for the `codestral` provider.
+
+* `OPENROUTER_API_KEY`
+  API key used for the `openrouter` provider.
+
+The `ollama` provider can be used **locally** without an API key.
+
+At the moment, these are the only supported configuration options. Provider handling is expected to become more flexible in the future.
 
 ## Usage
 
@@ -17,13 +28,15 @@ CLI for interacting with language models.
 Usage: netero [OPTIONS] [PROMPT] [COMMAND]
 ```
 
+If input is provided via `stdin`, it will be used as additional context for the prompt.
+
 ### Commands
 
 * `commit`
-  Generate a commit message
+  Generate a commit message from staged changes
 
 * `prompt`
-  Process a single prompt
+  Send a prompt to the language model and print the response
 
 ### Arguments
 
@@ -43,3 +56,52 @@ Usage: netero [OPTIONS] [PROMPT] [COMMAND]
 
 * `-V, --version`
   Print version
+
+## Examples
+
+### Basic prompt
+
+```sh
+netero "Explain the difference between hard links and symbolic links"
+```
+
+### Using stdin for longer prompts
+
+```sh
+cat README.md | netero "Summarize this project documentation"
+```
+
+### Generate a Git commit message
+
+```sh
+netero commit | git commit -F - --edit
+```
+
+### Using a different provider
+
+```sh
+netero -p openrouter "Explain how systemd manages services"
+```
+
+### Verbose output
+
+```sh
+netero -v "Explain the Rust ownership model"
+```
+
+### Process a man page
+
+```sh
+man tmux | netero "How can I split a tmux window?"
+```
+
+### Analyze command output
+
+```sh
+ps aux | netero "Which processes are consuming the most resources?"
+```
+
+### Pipe output to another command
+```sh
+ss -tulpen | netero "Summarize active listening sockets" | mdless
+```
