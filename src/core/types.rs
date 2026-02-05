@@ -11,6 +11,7 @@ pub struct CliContext {
     pub ai: Service,
     pub verbose: bool,
     pub provider: String,
+    pub stdin: String,
 }
 
 #[derive(Serialize)]

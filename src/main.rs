@@ -4,14 +4,22 @@ mod task;
 use clap::Parser;
 use core::interfaz;
 use std::env;
+use std::io::{self, IsTerminal, Read};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut stdin = String::new();
+
+    if !io::stdin().is_terminal() {
+        io::stdin().read_to_string(&mut stdin).unwrap();
+    }
+
     let args = interfaz::Cli::parse();
     let ai = core::Service::new(Some(&args.provider));
 
     let ctx = core::CliContext {
         ai,
+        stdin,
         verbose: args.verbose,
         provider: args.provider.to_string(),
     };
@@ -61,12 +69,25 @@ async fn send_chat(
     ctx: &core::CliContext,
     request: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let user = env::var("USER").unwrap_or("user".to_string());
+    let user = env::var("USER").unwrap_or_else(|_| "user".to_string());
 
-    let response = ctx.ai.complete(request).await?;
+    let prompt = if ctx.stdin.trim().is_empty() {
+        format!(
+            "== USER REQUEST ==\n{}\n== END USER REQUEST ==",
+            request.trim()
+        )
+    } else {
+        format!(
+            "== STDIN FILE ==\n{}\n== END STDIN FILE ==\n\n== USER REQUEST ==\n{}\n== END USER REQUEST ==",
+            ctx.stdin.trim(),
+            request.trim()
+        )
+    };
+
+    let response = ctx.ai.complete(&prompt).await?;
 
     if ctx.verbose {
-        println!("\x1b[1m{}:\x1b[0m\n\n{}\n", user.to_uppercase(), request);
+        println!("\x1b[1m{}:\x1b[0m\n\n{}\n", user.to_uppercase(), prompt);
         println!(
             "\x1b[1m{}:\x1b[0m\n\n{}",
             ctx.provider.to_uppercase(),
