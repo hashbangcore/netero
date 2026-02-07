@@ -1,3 +1,5 @@
+use crate::core;
+
 use std::process::Command;
 
 fn prompt_instruction() -> &'static str {
@@ -31,7 +33,7 @@ fn staged_changes() -> String {
     }
 }
 
-pub fn generate(hint: Option<&str>) -> String {
+fn generate(hint: Option<&str>) -> String {
     let user_hint = hint.unwrap_or("");
 
     let context = "repository context";
@@ -51,4 +53,21 @@ pub fn generate(hint: Option<&str>) -> String {
         .map(|(title, content)| cover(title, content))
         .collect::<Vec<_>>()
         .join("\n\n")
+}
+
+pub async fn generate_commit(
+    ctx: &core::CliContext,
+    hint: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let prompt = generate(hint);
+
+    if ctx.verbose {
+        println!("{}\n\n", prompt);
+    }
+
+    let result = ctx.ai.complete(&prompt).await?;
+
+    println!("{}", result);
+
+    Ok(())
 }

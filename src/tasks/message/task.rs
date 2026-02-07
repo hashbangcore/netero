@@ -2,19 +2,7 @@ use crate::core;
 use crate::utils;
 use std::env;
 
-/// Envía una solicitud al LLM usando el contexto de la CLI.
-///
-/// Esta función combina el prompt del usuario, el contenido de stdin
-/// (si existe) y un preámbulo con información de usuario y fecha,
-/// luego llama al servicio AI para obtener la respuesta.
-///
-/// # Argumentos
-/// - `ctx`: Referencia al contexto de la CLI, que incluye AI, stdin, verbose y provider.
-/// - `request`: La solicitud de usuario a enviar al modelo.
-///
-/// # Errores
-/// Devuelve `Box<dyn std::error::Error>` si ocurre un error al completar la solicitud.
-pub async fn send_chat(
+pub async fn generate_message(
     ctx: &core::CliContext,
     request: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
