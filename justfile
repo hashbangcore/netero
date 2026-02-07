@@ -18,8 +18,8 @@ sync:
 test-ollama:
     RUSTFLAGS="-Awarnings" cargo run --bin netero-dev --quiet -- -v -p ollama  "escribe un poema"
 
-test-chat:
-    RUSTFLAGS="-Awarnings" cargo run --bin netero-dev --quiet -- -v -p ollama  chat "work"
+test-chat model="ollama":
+    RUSTFLAGS="-Awarnings" cargo run --bin netero-dev --quiet -- -v -p {{ model }}  chat
 
 show:
     find src -type f -exec sh -c 'for f; do echo "--- $f ---"; cat "$f"; done' sh {} + | larry "tree -I 'docs|target'" 

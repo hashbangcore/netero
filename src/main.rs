@@ -6,6 +6,7 @@ use clap::Parser;
 use core::interfaz;
 use tasks::commit;
 use tasks::message;
+use tasks::simple_chat;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,6 +33,7 @@ async fn execute(
     match args.command {
         Some(interfaz::Commands::Commit { hint }) => commit::generate(ctx, hint.as_deref()).await?,
         Some(interfaz::Commands::Prompt { input }) => message::generate(ctx, &input).await?,
+        Some(interfaz::Commands::Chat) => simple_chat::generate(ctx).await,
         None => {
             if let Some(prompt) = args.prompt {
                 message::generate(ctx, &prompt).await?;

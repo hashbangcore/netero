@@ -18,4 +18,5 @@ inquire = "0.9.2"
 reqwest = { version = "0.13.1", features = ["json"] }
 ron = "0.12.0"
 serde = { version = "1.0.228", features = ["derive"] }
+termimad = "0.34.1"
 tokio = { version = "1.49.0", features = ["full"] }
