@@ -26,7 +26,7 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Start simple chat
+    /// Open a minimal chat session
     Chat,
 
     /// Generate a commit message

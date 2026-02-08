@@ -32,6 +32,9 @@ If input is provided via `stdin`, it will be used as additional context for the 
 
 ### Commands
 
+* `chat`
+  Open a minimal chat session
+
 * `commit`
   Generate a commit message from staged changes
 
