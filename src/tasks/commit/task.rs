@@ -56,16 +56,17 @@ fn generate(hint: Option<&str>) -> String {
 }
 
 pub async fn generate_commit(
-    ctx: &core::CliContext,
+    service: &core::Service,
+    args: &core::interfaz::Cli,
     hint: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let prompt = generate(hint);
 
-    if ctx.verbose {
+    if args.verbose {
         println!("{}\n\n", prompt);
     }
 
-    let result = ctx.ai.complete(&prompt).await?;
+    let result = service.complete(&prompt).await?;
 
     println!("{}", result);
 

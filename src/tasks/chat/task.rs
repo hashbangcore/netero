@@ -51,8 +51,9 @@ DATETIME: {}
     )
 }
 
-pub async fn connect(ctx: &core::CliContext) {
-    let provider = ctx.provider.clone();
+pub async fn connect(service: &core::Service, args: &core::interfaz::Cli) {
+    let provider = args.provider.clone();
+    //let provider = "codestral".to_string();
     let mut history: Vec<String> = Vec::new();
     let mut rl =
         Editor::<(), DefaultHistory>::new().expect("failed to initialize rustyline editor");
@@ -80,11 +81,11 @@ pub async fn connect(ctx: &core::CliContext) {
         let dialog = history.join("\n");
         let prompt = crete_prompt(&dialog, &user_input);
 
-        if ctx.verbose {
+        if args.verbose {
             println!("{}", prompt);
         }
 
-        match ctx.ai.complete(&prompt).await {
+        match service.complete(&prompt).await {
             Ok(text) => {
                 let output = utils::render_markdown(&text);
                 println!("\n{}", output);

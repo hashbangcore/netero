@@ -7,12 +7,6 @@ pub struct Service {
     pub endpoint: String,
     pub model: String,
 }
-pub struct CliContext {
-    pub ai: Service,
-    pub verbose: bool,
-    pub provider: String,
-    pub stdin: String,
-}
 
 #[derive(Serialize)]
 pub struct Message {
