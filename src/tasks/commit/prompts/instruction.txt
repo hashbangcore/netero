@@ -1,14 +1,14 @@
 Your task is to generate a commit message based on the "STAGED CHANGES",
 "SKELETON" and "CONVENTION" sections provided.
 
+If no changes are staged, return exactly:
+- Error: no changes staged for commit
+
+Otherwise, generate a commit message following these rules:
 - Use imperative mode
-- Generate only raw text. No markdown, no code blocks.
-- Keep the commit subject short, direct, and technical
-- Only add bullet points if they provide meaningful information
-  not already covered in the subject
-- Do not repeat or rephrase the subject in bullets
-- Do not add unnecessary details, commentary, or explanations
-- For trivial or self-explanatory changes, use only the subject line
-- Prefer concise, human-like style
-- For multiple changes, use bullets sparingly and only when they clarify
-  key functional changes
+- Generate only raw text, no markdown
+- Keep the commit subject short, direct, technical
+- Add bullets only if they clarify key changes
+- Do not repeat the subject in bullets
+- Avoid unnecessary details, commentary, or explanations
+- For trivial or self-explanatory changes, return only the subject line

@@ -16,11 +16,29 @@ fn prompt_skeleton() -> &'static str {
 
 fn cover(title: &str, content: &str) -> String {
     let t = title.to_uppercase();
-    format!("== START {t} ==\n{content}\n== END {t} ==")
+    format!(":: START {t} ::\n{content}\n:: END {t} ::")
+}
+
+fn comment(text: &str) -> String {
+    text.lines()
+        .map(|line| format!("# {}", line))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn staged_changes() -> String {
-    let output = Command::new("git").args(["diff", "--staged"]).output();
+    // TODO: implementar la funcionalidad de larry
+    let output = Command::new("larry")
+        .args([
+            "git branch -v",
+            "git remote -v",
+            "git log --stat -1",
+            "echo '*GIT LOG*' && git log --oneline -10",
+            "git status -s",
+            "git status",
+            "git diff --cached --quiet && echo 'No staged changes' || echo 'Staged changes present && git diff --staged'",
+        ])
+        .output();
 
     match output {
         Ok(out) if out.status.success() => String::from_utf8(out.stdout)
@@ -45,7 +63,7 @@ fn generate(hint: Option<&str>) -> String {
         ("SKELETON", prompt_skeleton().to_string()),
         ("PROJECT CONTEXT", context.to_string()),
         ("USER HINT", user_hint.to_string()),
-        ("STAGED CHANGES", staged_changes),
+        ("REPOSITORY STATUS", staged_changes),
     ];
 
     sections
@@ -68,7 +86,11 @@ pub async fn generate_commit(
 
     let result = service.complete(&prompt).await?;
 
-    println!("{}", result);
+    // TODO: manejar de forma más segura
+    match result.contains("Error: no changes staged for commit") {
+        true => println!("{}", result),
+        false => println!("{}\n\n\n{}", result, comment(prompt_convention())),
+    }
 
     Ok(())
 }
