@@ -1,3 +1,5 @@
+use crate::core::Cli;
+
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
@@ -36,7 +38,7 @@ pub struct ResponseMessage {
 }
 
 impl Service {
-    pub fn new() -> Self {
+    pub fn new(args: &Cli) -> Self {
         let url = std::env::var("NETERO_URL")
             .ok()
             .filter(|v| !v.trim().is_empty());
@@ -49,7 +51,9 @@ impl Service {
             .ok()
             .filter(|v| !v.trim().is_empty());
 
-        println!("modelo: {:#?}\nurl: {:#?}\nkey: {:#?}", model, url, key);
+        if args.verbose {
+            println!("modelo: {:#?}\nurl: {:#?}\nkey: {:#?}", model, url, key);
+        }
 
         let (endpoint, model, apikey) = match (url, model) {
             (Some(u), Some(m)) => (u, m, key),
