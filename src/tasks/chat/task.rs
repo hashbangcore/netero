@@ -56,13 +56,9 @@ DATETIME: {}
 }
 
 pub async fn connect(service: &core::Service, args: &core::Cli) {
-    let provider = args.provider.clone();
-    //let provider = "codestral".to_string();
     let mut history: Vec<String> = Vec::new();
     let mut rl =
         Editor::<(), DefaultHistory>::new().expect("failed to initialize rustyline editor");
-
-    println!("::: {} :::\n", provider);
 
     loop {
         println!("\x1b[36m");

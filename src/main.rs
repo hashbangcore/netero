@@ -13,7 +13,7 @@ use tasks::message;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdin = utils::get_stdin();
     let args = core::Cli::parse();
-    let service = core::Service::new(Some(&args.provider));
+    let service = core::Service::new();
 
     execute(&service, &args, stdin).await?;
 

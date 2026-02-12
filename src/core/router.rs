@@ -36,36 +36,32 @@ pub struct ResponseMessage {
 }
 
 impl Service {
-    pub fn new(provider: Option<&str>) -> Self {
-        let provider = provider.unwrap();
+    pub fn new() -> Self {
+        let url = std::env::var("NETERO_URL")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
 
-        let (envar, endpoint, model, dynamic) = match provider {
-            "codestral" => (
-                Some("CODE_API_KEY"),
-                "https://codestral.mistral.ai/v1/chat/completions",
-                "codestral-latest",
-                false,
+        let model = std::env::var("NETERO_MODEL")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
+
+        let key = std::env::var("NETERO_API_KEY")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
+
+        println!("modelo: {:#?}\nurl: {:#?}\nkey: {:#?}", model, url, key);
+
+        let (endpoint, model, apikey) = match (url, model) {
+            (Some(u), Some(m)) => (u, m, key),
+            (None, None) => (
+                "https://codestral.mistral.ai/v1/chat/completions".to_string(),
+                "codestral-latest".to_string(),
+                std::env::var("CODE_API_KEY")
+                    .ok()
+                    .filter(|v| !v.trim().is_empty()),
             ),
-
-            _ => (Some("NETERO_API_KEY"), "NETERO_URL", "NETERO_MODEL", true),
+            _ => panic!("NETERO_URL and NETERO_MODEL must be set together"),
         };
-
-        // Shadowing:
-        let endpoint = if dynamic {
-            std::env::var(endpoint).expect("Endpoint env var not found")
-        } else {
-            endpoint.to_string()
-        };
-
-        let model = if dynamic {
-            std::env::var(model).expect("Model env var not found")
-        } else {
-            model.to_string()
-        };
-        // end shadowing
-
-        let apikey =
-            envar.map(|var| std::env::var(var).expect("API key environment variable not found"));
 
         Self {
             http: Client::new(),
@@ -91,6 +87,7 @@ impl Service {
         }
 
         let response = req.send().await?.json::<ChatResponse>().await?;
+
         let content = response
             .choices
             .get(0)
@@ -100,6 +97,5 @@ impl Service {
             .clone();
 
         Ok(content)
-
     }
 }
