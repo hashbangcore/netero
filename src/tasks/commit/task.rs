@@ -34,7 +34,6 @@ fn staged_changes() -> String {
             "git branch -v",
             "git remote -v",
             "git log --stat -1",
-            "echo '*GIT LOG*' && git log --oneline -10",
             "git status -s",
             "git status",
             "git diff --cached --quiet && echo 'No staged changes' || echo 'Staged changes present' && git diff --staged",

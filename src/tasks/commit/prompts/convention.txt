@@ -1,12 +1,12 @@
-build: changes in build system or external dependencies
-chore: maintenance tasks without functional impact
-ci: changes in CI/CD configuration
-docs: documentation changes
-feat: new functionality
-fix: bug fix
+build: build system, dependencies, toolchain
+chore: maintenance tasks without user-visible impact
+ci: CI/CD configuration or scripts
+docs: documentation only
+feat: new user-visible functionality or behavior
+fix: user-visible bug fix or incorrect behavior
 perf: performance improvements
-refactor: refactoring without changing functionality
+refactor: internal restructuring with no user-visible behavior change
 revert: revert a previous commit
-style: formatting, spaces, semicolons, without changing logic
+style: formatting only (no logic change)
 test: add or modify tests
 wip: work in progress, ongoing development

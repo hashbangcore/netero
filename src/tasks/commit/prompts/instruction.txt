@@ -5,9 +5,11 @@ If no changes are staged, return exactly:
 - Error: no changes staged for commit
 
 Otherwise, generate a commit message following these rules:
+- Output exactly one commit message
 - Use imperative mode
 - Generate only raw text, no markdown
-- Keep the commit subject short, direct, technical
+- Format: <type>(optional-scope): <short_summary>
+- Keep the commit subject short, direct, technical (<= 50 chars)
 - Add bullets only if they clarify key changes
 - Do not repeat the subject in bullets
 - Avoid unnecessary details, commentary, or explanations
