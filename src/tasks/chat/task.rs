@@ -276,6 +276,8 @@ pub async fn generate_chat(
 
         if user_input == "/clean" {
             history.clear();
+            print!("\x1b[2J\x1b[H");
+            let _ = std::io::stdout().flush();
             continue;
         }
 
