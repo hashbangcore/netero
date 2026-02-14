@@ -11,16 +11,13 @@ pub async fn generate_message(
     let user = utils::get_user();
     let datetime = utils::current_datetime();
 
-    let preamble = format!(
-        "LLM name: Netero\nUser name: {}\nDate and hour: {}\n",
-        user, datetime
-    );
+    let preamble = format!("LLM name: Netero\nUser name: {}\nDate and hour: {}", user, datetime);
 
     let prompt = if stdin.trim().is_empty() {
-        format!("User request:\n {}\n", request.trim())
+        format!("User request:\n{}", request.trim())
     } else {
         format!(
-            "== USER REQUEST ==\n{}\n== END USER REQUEST ==\n\n== STDIN FILE ==\n{}\n== END STDIN FILE ==\n",
+            "== USER REQUEST ==\n{}\n== END USER REQUEST ==\n== STDIN FILE ==\n{}\n== END STDIN FILE ==",
             request.trim(),
             stdin,
         )
