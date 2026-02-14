@@ -73,6 +73,23 @@ fn generate(hint: Option<&str>) -> String {
         .join("\n\n")
 }
 
+fn normalize_commit_message(message: &str) -> String {
+    let trimmed = message.trim_end();
+    let lines: Vec<&str> = trimmed.split('\n').collect();
+    if lines.len() <= 1 {
+        return trimmed.to_string();
+    }
+    if !lines[1].is_empty() {
+        let mut out = String::new();
+        out.push_str(lines[0]);
+        out.push('\n');
+        out.push('\n');
+        out.push_str(&lines[1..].join("\n"));
+        return out;
+    }
+    trimmed.to_string()
+}
+
 pub async fn generate_commit(
     service: &core::Service,
     args: &core::Cli,
@@ -85,11 +102,12 @@ pub async fn generate_commit(
     }
 
     let result = service.complete(&prompt).await?;
+    let result = normalize_commit_message(&result);
 
     // TODO: manejar de forma más segura
     match result.contains("Error: no changes staged for commit") {
         true => println!("{}", result),
-        false => println!("{}\n\n\n{}", result, comment(prompt_convention())),
+        false => println!("{}\n\n\n{}", result.trim_end(), comment(prompt_convention())),
     }
 
     Ok(())
