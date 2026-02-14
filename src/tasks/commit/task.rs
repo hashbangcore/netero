@@ -4,7 +4,7 @@ use super::format::{comment, cover, normalize_commit_message};
 use super::git::staged_changes;
 use super::prompts::{convention, instruction, skeleton};
 
-fn generate(hint: Option<&str>) -> String {
+fn generate(hint: Option<&str>, convention_text: &str) -> String {
     // Build a single prompt with all required sections.
     let user_hint = hint.unwrap_or("");
 
@@ -13,7 +13,7 @@ fn generate(hint: Option<&str>) -> String {
 
     let sections = [
         ("INSTRUCTION", instruction().to_string()),
-        ("CONVENTION", convention().to_string()),
+        ("CONVENTION", convention_text.to_string()),
         ("SKELETON", skeleton().to_string()),
         ("PROJECT CONTEXT", context.to_string()),
         ("USER HINT", user_hint.to_string()),
@@ -32,8 +32,15 @@ pub async fn generate_commit(
     service: &core::Service,
     args: &core::Cli,
     hint: Option<&str>,
+    convention_path: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let prompt = generate(hint);
+    let convention_text = if let Some(path) = convention_path {
+        std::fs::read_to_string(path)?
+    } else {
+        convention().to_string()
+    };
+
+    let prompt = generate(hint, &convention_text);
 
     if args.verbose {
         println!("{}\n\n", prompt);
@@ -45,7 +52,7 @@ pub async fn generate_commit(
     // TODO: manejar de forma más segura
     match result.contains("Error: no changes staged for commit") {
         true => println!("{}", result),
-        false => println!("{}\n\n\n{}", result.trim_end(), comment(convention())),
+        false => println!("{}\n\n\n{}", result.trim_end(), comment(&convention_text)),
     }
 
     Ok(())

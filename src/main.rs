@@ -43,8 +43,8 @@ async fn execute(
     stdin_is_piped: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     match &args.command {
-        Some(core::Commands::Commit { hint }) => {
-            commit::connect(service, args, hint.as_deref()).await?
+        Some(core::Commands::Commit { hint, convention }) => {
+            commit::connect(service, args, hint.as_deref(), convention.as_deref()).await?
         }
         Some(core::Commands::Prompt { input }) => {
             let input_text = input.join(" ");

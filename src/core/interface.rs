@@ -33,6 +33,9 @@ pub enum Commands {
     Commit {
         /// Optional prompt used as commit context
         hint: Option<String>,
+        /// Path to a custom commit convention file
+        #[arg(short = 'c', long, env = "NETERO_CONVENTION")]
+        convention: Option<String>,
     },
 
     /// Process a single prompt
