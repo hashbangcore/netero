@@ -28,13 +28,8 @@ fn comment(text: &str) -> String {
 
 fn staged_changes() -> String {
     run_commands(&[
-        "cat $(find . -type f -name 'README.md' -not -path '*/target/*' -not -path '*/docs/*' | xargs -I {} realpath {})",
-        "git branch -v",
-        "git remote -v",
-        "git log --stat -1",
-        "git status -s",
         "git status",
-        "git diff --cached --quiet && echo 'No staged changes' || echo 'Staged changes present' && git diff --staged",
+        "git diff --cached --quiet && echo 'No staged changes' || git diff --staged",
     ])
 }
 
