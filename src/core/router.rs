@@ -1,4 +1,4 @@
-use crate::core::Cli;
+use crate::core::{Cli, Config};
 use crate::core::log::send_log;
 
 use reqwest::Client;
@@ -40,39 +40,17 @@ pub struct ResponseMessage {
 
 impl Service {
     pub fn new(args: &Cli) -> Self {
-        let url = std::env::var("NETERO_URL")
-            .ok()
-            .filter(|v| !v.trim().is_empty());
+        let config = Config::from_env(args);
 
-        let model = std::env::var("NETERO_MODEL")
-            .ok()
-            .filter(|v| !v.trim().is_empty());
-
-        let key = std::env::var("NETERO_API_KEY")
-            .ok()
-            .filter(|v| !v.trim().is_empty());
-
-        if args.verbose {
-            println!("modelo: {:#?}\nurl: {:#?}\n", model, url);
+        if config.verbose {
+            println!("modelo: {:#?}\nurl: {:#?}\n", config.model, config.endpoint);
         }
-
-        let (endpoint, model, apikey) = match (url, model) {
-            (Some(u), Some(m)) => (u, m, key),
-            (None, None) => (
-                "https://codestral.mistral.ai/v1/chat/completions".to_string(),
-                "codestral-latest".to_string(),
-                std::env::var("CODE_API_KEY")
-                    .ok()
-                    .filter(|v| !v.trim().is_empty()),
-            ),
-            _ => panic!("NETERO_URL and NETERO_MODEL must be set together"),
-        };
 
         Self {
             http: Client::new(),
-            apikey,
-            endpoint,
-            model,
+            apikey: config.apikey,
+            endpoint: config.endpoint,
+            model: config.model,
         }
     }
 
