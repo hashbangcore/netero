@@ -27,28 +27,48 @@ fn comment(text: &str) -> String {
 }
 
 fn staged_changes() -> String {
-    // TODO: implementar la funcionalidad de larry
-    let output = Command::new("larry")
-        .args([
-            "cat $(find . -type f -name 'README.md' -not -path '*/target/*' -not -path '*/docs/*' | xargs -I {} realpath {})",
-            "git branch -v",
-            "git remote -v",
-            "git log --stat -1",
-            "git status -s",
-            "git status",
-            "git diff --cached --quiet && echo 'No staged changes' || echo 'Staged changes present' && git diff --staged",
-        ])
-        .output();
+    run_commands(&[
+        "cat $(find . -type f -name 'README.md' -not -path '*/target/*' -not -path '*/docs/*' | xargs -I {} realpath {})",
+        "git branch -v",
+        "git remote -v",
+        "git log --stat -1",
+        "git status -s",
+        "git status",
+        "git diff --cached --quiet && echo 'No staged changes' || echo 'Staged changes present' && git diff --staged",
+    ])
+}
 
-    match output {
-        Ok(out) if out.status.success() => String::from_utf8(out.stdout)
-            .unwrap_or_else(|e| format!("UTF-8 error in git diff --staged: {e}")),
-        Ok(out) => {
-            let err = String::from_utf8_lossy(&out.stderr);
-            format!("git diff --staged failed:\n{err}")
+fn run_commands(commands: &[&str]) -> String {
+    let mut sections = Vec::with_capacity(commands.len());
+
+    for cmd_str in commands {
+        let output = Command::new("sh").arg("-c").arg(cmd_str).output();
+        match output {
+            Ok(out) => {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                let stderr = String::from_utf8_lossy(&out.stderr);
+                let combined_output = if !stderr.is_empty() {
+                    format!("{}{}", stdout, stderr)
+                } else {
+                    stdout.to_string()
+                };
+
+                sections.push(format!(
+                    "[section]\n[command]\n{}\n[output]\n{}\n[end section]",
+                    cmd_str,
+                    combined_output.trim_end()
+                ));
+            }
+            Err(err) => {
+                sections.push(format!(
+                    "[section]\n[command]\n{}\n[error]\n{}\n[end section]",
+                    cmd_str, err
+                ));
+            }
         }
-        Err(e) => format!("Failed to execute git diff --staged: {e}"),
     }
+
+    sections.join("\n\n")
 }
 
 fn generate(hint: Option<&str>) -> String {
