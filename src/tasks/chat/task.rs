@@ -1,5 +1,6 @@
 use crate::core;
 use crate::utils;
+use futures_util::StreamExt;
 use rustyline::Context;
 use rustyline::Editor;
 use rustyline::Helper;
@@ -9,6 +10,7 @@ use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
 use rustyline::history::DefaultHistory;
 use rustyline::validate::Validator;
+use serde_json::json;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::process::Command;
@@ -135,6 +137,64 @@ fn run_inline_commands(user_input: &str) -> Option<String> {
     Some(entries.join("\n\n"))
 }
 
+async fn stream_completion(
+    service: &core::Service,
+    prompt: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let body = json!({
+        "model": service.model,
+        "messages": [
+            { "role": "user", "content": prompt }
+        ],
+        "stream": true
+    });
+
+    let mut req = service.http.post(&service.endpoint).json(&body);
+
+    if let Some(key) = &service.apikey {
+        req = req.header("Authorization", format!("Bearer {}", key));
+    }
+
+    let mut response = req.send().await?;
+    let mut stream = response.bytes_stream();
+    let mut content = String::new();
+    let mut stdout = std::io::stdout();
+
+    while let Some(item) = stream.next().await {
+        let chunk = item?;
+        let text = String::from_utf8_lossy(&chunk);
+
+        for line in text.lines() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            let Some(data) = line.strip_prefix("data:") else {
+                continue;
+            };
+            let data = data.trim();
+            if data == "[DONE]" {
+                stdout.write_all(b"\n")?;
+                stdout.flush()?;
+                return Ok(content);
+            }
+            let parsed: serde_json::Value = serde_json::from_str(data)?;
+            let delta = parsed["choices"][0]["delta"]["content"]
+                .as_str()
+                .unwrap_or("");
+            if !delta.is_empty() {
+                content.push_str(delta);
+                stdout.write_all(delta.as_bytes())?;
+                stdout.flush()?;
+            }
+        }
+    }
+
+    stdout.write_all(b"\n")?;
+    stdout.flush()?;
+    Ok(content)
+}
+
 /// Starts the interactive chat session and handles all supported commands.
 pub async fn generate_chat(
     service: &core::Service,
@@ -148,10 +208,11 @@ pub async fn generate_chat(
     } else {
         Some(stdin)
     };
+    let mut stream_enabled = false;
     let mut rl = Editor::<CommandCompleter, DefaultHistory>::new()
         .expect("failed to initialize rustyline editor");
     rl.set_helper(Some(CommandCompleter {
-        commands: vec!["/clean", "/trans", "/eval", "/help"],
+        commands: vec!["/clean", "/trans", "/eval", "/help", "/stream"],
     }));
     let mut tty_reader = if stdin_is_piped {
         match File::open("/dev/tty") {
@@ -224,8 +285,23 @@ pub async fn generate_chat(
 /help  Show this help message\n\
 /clean Clear chat history\n\
 /trans Translate text (uses LLM)\n\
-/eval  Evaluate arithmetic expression\n"
+/eval  Evaluate arithmetic expression\n\
+/stream [on|off] Toggle streaming output\n"
             );
+            continue;
+        }
+
+        if let Some(rest) = user_input.strip_prefix("/stream") {
+            let mode = rest.trim().to_lowercase();
+            if mode == "on" {
+                stream_enabled = true;
+                println!("\nstream: on");
+            } else if mode == "off" {
+                stream_enabled = false;
+                println!("\nstream: off");
+            } else {
+                println!("\nUsage: /stream on|off");
+            }
             continue;
         }
 
@@ -298,18 +374,29 @@ Do not interpret lang:lang as literal text.\n\nTEXT:\n{}",
             println!("\x1b[32m{}\x1b[0m", prompt);
         }
 
-        match service.complete(&prompt).await {
-            Ok(text) => {
-                let output = utils::render_markdown(&text);
-                println!("\n{}", output);
+        let response = if stream_enabled {
+            match stream_completion(service, &prompt).await {
+                Ok(text) => text,
+                Err(err) => {
+                    eprintln!("AI error: {}", err);
+                    break;
+                }
+            }
+        } else {
+            match service.complete(&prompt).await {
+                Ok(text) => {
+                    let output = utils::render_markdown(&text);
+                    println!("\n{}", output);
+                    text
+                }
+                Err(err) => {
+                    eprintln!("AI error: {}", err);
+                    break;
+                }
+            }
+        };
 
-                history.push(format!("{}: {}", utils::get_user(), cleaned_input));
-                history.push(format!("Assistant: {}\n", text));
-            }
-            Err(err) => {
-                eprintln!("AI error: {}", err);
-                break;
-            }
-        }
+        history.push(format!("{}: {}", utils::get_user(), cleaned_input));
+        history.push(format!("Assistant: {}\n", response));
     }
 }
