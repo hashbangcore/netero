@@ -28,8 +28,8 @@ fn comment(text: &str) -> String {
 
 fn staged_changes() -> String {
     run_commands(&[
-        "git status",
-        "git diff --cached --quiet && echo 'No staged changes' || git diff --staged",
+        "git status -sb",
+        "git diff --cached --quiet && echo 'No staged changes' || (git diff --staged --stat --no-color && git diff --staged --no-color)",
     ])
 }
 
