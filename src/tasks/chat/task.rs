@@ -385,6 +385,7 @@ pub async fn generate_chat(
         if let Some(rest) = user_input.strip_prefix("/trans") {
             let raw_text = strip_inline_commands(rest).trim().to_string();
             if raw_text.is_empty() {
+                println!("\nUsage: /trans [INPUT_LANG:OUTPUT_LANG] <text>");
                 continue;
             }
 
