@@ -1,197 +1,329 @@
-# Netero
+# Introducción
 
-Un asistente LLM para la terminal, pensado para usuarios avanzados.
+Netero 🫶 es un CLI para LLMs, orientado a usuarios avanzados de GNU/Linux.
+Funciona desde la línea de comandos, se integra en pipelines y
+ofrece un chat minimalista con expansión de comandos.
+
+Cuanto más hábil seas con las shells, mayor provecho le sacarás a esta herramienta.
 
 **También en inglés:** [Ver README en inglés](../../README.md)
 
-## Estado del proyecto
-
-Experimental. Las funciones están incompletas y pueden cambiar.
+---
 
 ## Variables de entorno
 
-Configura con variables de entorno.
+Se configura mediante variables de entorno.
 
-Proveedor por defecto (`codestral`):
+### Proveedor por defecto (`codestral`)
 
 * `CODE_API_KEY`
   Clave API del proveedor por defecto.
 
-Proveedor personalizado (compatible con OpenAI):
+### Proveedor personalizado (compatible con OpenAI)
 
 * `NETERO_URL`
-  URL del endpoint de chat completions.
+  URL del endpoint de *chat completions*.
 
 * `NETERO_MODEL`
-  Nombre del modelo enviado al proveedor.
+  Nombre del modelo seleccionado.
 
 * `NETERO_API_KEY`
   Clave API opcional para el proveedor personalizado.
 
-`NETERO_URL` y `NETERO_MODEL` deben ir juntos. Si están definidos, reemplazan al proveedor por defecto.
+---
 
 ## Uso
-
-CLI para interactuar con modelos de lenguaje.
 
 ```
 Uso: netero [OPCIONES] [PROMPT] [COMANDO]
 ```
 
-Si hay entrada por `stdin`, se agrega como contexto extra.
-Las expresiones `#!(...)` se ejecutan en tu shell y su salida se añade al prompt.
-Si el prompt contiene rutas de archivo (`./`, `../`, `/` o `~/`), se adjuntan al contexto.
+Si hay entrada por `stdin`, se agrega como contexto adicional.
+
+---
 
 ### Comandos
 
 * `chat`
-  Abre una sesión de chat minimalista
+  Abre una sesión de chat minimalista.
 
 * `commit`
-  Genera un mensaje de commit a partir de los cambios en espera
+  Genera un mensaje de commit a partir de los cambios en *staging*.
 
 * `completion`
-  Genera scripts de autocompletado para el shell
+  Genera scripts de autocompletado para la shell.
 
 * `prompt`
-  Envía un prompt e imprime la respuesta
+  Envía un prompt al modelo y muestra la respuesta.
 
-#### Comandos del chat
-
-* `/help`
-  Muestra la ayuda
-
-* `/clean`
-  Limpia el historial del chat
-
-* `/add`
-  Adjunta archivos al contexto
-
-* `/trans`
-  Traduce texto
-
-* `/eval`
-  Evalúa una expresión aritmética
-
-* `/save`
-  Guarda un informe del chat
-
-* `/stream`
-  Activa o desactiva el streaming
+---
 
 ### Argumentos
 
 * `[PROMPT]`
-  Prompt enviado al modelo
+  Prompt enviado al modelo.
+
+---
 
 ### Opciones
 
 * `-v, --verbose`
-  Habilita la salida detallada
+  Habilita la salida detallada.
 
 * `-t, --trace`
-  Inicia el servidor de trazas para ver el tráfico crudo
+  Muestra los prompts enviados y las respuestas recibidas (modo depuración).
 
 * `-h, --help`
-  Muestra la ayuda
+  Muestra la ayuda.
 
 * `-V, --version`
-  Muestra la versión
+  Muestra la versión.
+
+Puedes usar la opción `--trace` para revisar los prompts que se envían:
+
+```
+netero --trace
+```
+
+---
+
+## Chat interactivo
+
+### Comandos integrados
+
+* `/help`
+  Muestra la ayuda.
+
+* `/clean`
+  Limpia el historial del chat.
+
+* `/add`
+  Adjunta archivos al contexto.
+
+* `/trans`
+  Traduce texto.
+
+* `/eval`
+  Evalúa una expresión aritmética.
+
+* `/save`
+  Guarda la solicitud del usuario en un archivo.
+
+* `/stream`
+  Activa o desactiva el modo *streaming* en la respuesta del modelo.
+
+---
+
+### Ejecución de comandos en línea
+
+Puedes ejecutar cualquier comando válido en la shell usando:
+
+```
+#!(...)
+```
+
+El resultado del comando se adjuntará en el siguiente prompt enviado al modelo.
+
+Ejemplo:
+
+```sh
+➜ #!(sudo nmap scanme.nmap.org) analiza
+```
+
+El prompt generado sería similar a:
+
+```text
+:: END HISTORIAL CHAT (SYSTEM) ::
+:: COMMAND OUTPUT (SYSTEM) ::
+[section]
+[command]
+sudo nmap scanme.nmap.org
+
+[stdout]
+...
+[end section]
+:: END COMMAND OUTPUT (SYSTEM) ::
+:: USER MESSAGE ::
+analiza
+:: END USER MESSAGE ::
+:: RESPONSE ::
+El comando `sudo nmap scanme.nmap.org` completó un escaneo exitoso del host `scanme.nmap.org` (IPv4: 45.33.32.156, IPv6: 2600:3c01::f03c:91ff:fe18:bb2f). Se detectaron 4 puertos abiertos y 1 puerto filtrado:
+
+- **Puertos abiertos**:
+  - 22/tcp (SSH)
+  - 80/tcp (HTTP)
+  - 9929/tcp (nping-echo)
+  - 31337/tcp (Elite)
+
+- **Puerto filtrado**:
+  - 646/tcp (LDP)
+
+El escaneo tardó 4.89 segundos. No se encontraron errores críticos.
+```
+
+⚠ Los comandos se ejecutan en la shell del usuario sin sandbox.
+
+---
+
+## Uso de rutas en prompts
+
+Netero detecta automáticamente rutas absolutas y relativas en el prompt.
+
+Cualquier palabra que:
+
+* Comience con `/` (ruta absoluta)
+* Comience con `./` o `../` (ruta relativa)
+* Y corresponda a un **archivo existente**
+
+será interpretada como ruta válida y su contenido se adjuntará automáticamente al contexto enviado al modelo.
+
+No es necesario usar comandos especiales.
+
+---
+
+### En modo `chat`
+
+Dentro de una sesión interactiva:
+
+```sh
+netero chat
+```
+
+Puedes escribir:
+
+```
+Revisa este archivo y sugiere mejoras: ./src/main.rs
+```
+
+Si `./src/main.rs` existe y es un fichero, su contenido se adjuntará al prompt automáticamente.
+
+---
+
+### En modo prompt directo
+
+También funciona desde la línea de comandos:
+
+```sh
+netero "Traduce este fichero ./README.en.md"
+```
+
+Si `./README.en.md` existe, su contenido se incluirá automáticamente en el contexto antes de enviar la solicitud al modelo.
+
+---
+
+### Comportamiento
+
+* Solo se adjuntan archivos existentes.
+* No se adjuntan directorios.
+* Se pueden incluir múltiples rutas en un mismo prompt.
+* Las rutas se resuelven desde el directorio actual.
+
+---
 
 ## Ejemplos
 
-### Prompts con y sin comillas
+### 1. Prompt directo
 
 ```sh
-netero Explica la diferencia entre enlaces duros y simbólicos
-netero "Explica la diferencia entre enlaces duros y simbólicos"
-netero -v ¿Qué es Docker?
-netero -v "¿Qué es Docker?"
+netero "Explica cómo funciona io_uring en Linux"
 ```
 
-### Usando stdin para prompts más largos
+---
+
+### 2. Prompt sin comillas
 
 ```sh
-cat README.md | netero Resume este README
-cat README.md | netero "Resume este README"
+netero Explica el modelo de ownership en Rust
 ```
 
-### Generar un mensaje de commit de Git
+---
+
+### 3. Usando `stdin` como contexto
 
 ```sh
-netero commit | git commit -F - --edit
+cat Cargo.toml | netero "Describe las dependencias principales"
 ```
 
-### Convención de commit personalizada
+---
+
+### 4. Analizando salida de un comando
+
+```sh
+dmesg | tail -n 50 | netero "¿Hay errores relevantes en estos logs?"
+```
+
+---
+
+### 5. Generar mensaje de commit desde staging
+
+```sh
+netero commit | git commit -F -
+```
+
+---
+
+### 6. Generar mensaje con convención personalizada
 
 ```sh
 netero commit -c .repo/convencion.txt
-netero commit -c .repo/convencion.txt que sea de tipo service
 ```
 
-### Generar autocompletado para el shell
+---
+
+### 7. Modo verbose
 
 ```sh
-netero completion bash
+netero -v "Explica qué es un mutex en Rust"
 ```
 
-### Usando un proveedor personalizado
+---
+
+### 8. Inspeccionar prompts enviados (modo depuración)
+
+```sh
+netero --trace "¿Qué es un race condition?"
+```
+
+---
+
+### 9. Usar proveedor personalizado
 
 ```sh
 export NETERO_URL="https://api.example.com/v1/chat/completions"
 export NETERO_MODEL="mi-modelo"
 export NETERO_API_KEY="tu-api-key"
-netero Explica cómo systemd gestiona los servicios
+
+netero "Describe el algoritmo de scheduling CFS"
 ```
 
-### Salida detallada
+---
+
+### 10. Generar autocompletado para la shell
 
 ```sh
-netero -v ¿Qué es Docker?
-netero -v "¿Qué es Docker?"
+netero completion bash
 ```
 
-### Ejecutar comandos en línea dentro de chat
+---
 
-```sh
-netero chat
-# luego escribe:
-Resume este directorio: #!(ls -la)
-```
-
-Autocompletado dentro de `#!(...)`:
-- Comandos: `ls`, `cat`, `rg`, `git`, `pwd`, `grep`, `sed`, `awk`, `head`, `tail`
-- Si el primer comando es `git`, sugiere subcomandos comunes
-- También completa rutas que empiezan con `./`, `../`, `/` o `~/`
-
-### Comandos del chat
+### 11. Iniciar sesión interactiva
 
 ```sh
 netero chat
-# luego escribe:
-/help
-/eval 2 + 2 * 5
-/trans This is a test
-/clean
-/save resumen de la sesión
 ```
 
-### Procesar una página de manual
+---
 
-```sh
-man tmux | netero ¿Cómo puedo dividir una ventana en paneles?
+### 12. Ejecutar comando dentro del chat
+
+Dentro de la sesión:
+
+```
+Analiza esta salida:
+#!(free -h)
 ```
 
-### Analizar la salida de un comando
-
-```sh
-ps aux | netero ¿Qué consume más recursos?
-```
-
-### Enviar la salida a otro comando
-```sh
-ss -tulpen | netero Dime los sockets activos | glow -p
-```
+---
 
 ## Licencia
 
