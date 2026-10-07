@@ -10,3 +10,5 @@ revert: revert a previous commit
 style: formatting only (no logic change)
 test: add or modify tests
 wip: work in progress, ongoing development
+
+SCOPES: none

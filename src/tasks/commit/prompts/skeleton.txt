@@ -1,3 +1,3 @@
-<type>(optional-scope): <short summary>
+<type>(<optional-scope>): <summary>
 [blank line if bullets are included]
 - <bullet if needed for clarity>
