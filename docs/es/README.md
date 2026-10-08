@@ -1,10 +1,8 @@
 # Introducción
 
-Netero 🫶 es un CLI para LLMs, orientado a usuarios avanzados de GNU/Linux.
+Netero es un CLI para LLMs, orientado a usuarios avanzados de GNU/Linux.
 Funciona desde la línea de comandos, se integra en pipelines y
 ofrece un chat minimalista con expansión de comandos.
-
-Cuanto más hábil seas con las shells, mayor provecho le sacarás a esta herramienta.
 
 **También en inglés:** [Ver README en inglés](../../)
 
@@ -12,7 +10,7 @@ Cuanto más hábil seas con las shells, mayor provecho le sacarás a esta herram
 
 ## Instalación
 
-Netero se puede instalar de varias formas según tu preferencia:
+Netero se puede instalar de varias formas:
 
 ### Usando Cargo
 
@@ -22,8 +20,6 @@ cargo install netero
 
 ### Usando Nix Flakes
 
-Si usas Nix, puedes instalarlo con:
-
 ```bash
 nix profile add github:hashbangcore/netero
 ```
@@ -32,23 +28,21 @@ nix profile add github:hashbangcore/netero
 
 ## Variables de entorno
 
-Se configura mediante variables de entorno.
+Netero es agnóstico respecto al proveedor: habla con cualquier endpoint compatible con OpenAI y
+no incluye ningún proveedor por defecto, así que el destino se indica por configuración.
 
-### Proveedor por defecto (`codestral`)
-
-* `CODE_API_KEY`
-  Clave API del proveedor por defecto.
-
-### Proveedor personalizado (compatible con OpenAI)
-
-* `NETERO_URL`
+* `NETERO_URL` (obligatoria)
   URL del endpoint de *chat completions*.
 
-* `NETERO_MODEL`
-  Nombre del modelo seleccionado.
+* `NETERO_MODEL` (obligatoria)
+  Nombre del modelo a usar.
 
-* `NETERO_API_KEY`
-  Clave API opcional para el proveedor personalizado.
+* `NETERO_API_KEY` (opcional)
+  Clave API, que se envía como bearer token cuando el endpoint la pide.
+
+* `NETERO_TRACE_SOCKET` (opcional)
+  Ruta del socket de depuración de `--trace`. Por defecto
+  `$XDG_RUNTIME_DIR/netero.trace.sock`, o `/tmp/netero.trace.sock`.
 
 ---
 
@@ -310,8 +304,8 @@ netero --trace
 
 ```sh
 export NETERO_URL="https://api.example.com/v1/chat/completions"
-export NETERO_MODEL="mi-modelo"
-export NETERO_API_KEY="tu-api-key"
+export NETERO_MODEL="modelo"
+export NETERO_API_KEY="api-key"
 
 netero "Describe el algoritmo de scheduling CFS"
 ```

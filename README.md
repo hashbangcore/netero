@@ -1,10 +1,8 @@
 # Introduction
 
-Netero 🫶 is a CLI for LLMs, oriented toward advanced GNU/Linux users.
+Netero is a CLI for LLMs, oriented toward advanced GNU/Linux users.
 It runs from the command line, integrates into pipelines,
 and offers a minimal chat with command expansion.
-
-The more skilled you are with shells, the more you will get out of this tool.
 
 **Also in Spanish:** [View README in Spanish](./docs/es/)
 
@@ -12,7 +10,7 @@ The more skilled you are with shells, the more you will get out of this tool.
 
 ## Installation
 
-Netero can be installed in several ways depending on your preference:
+Netero can be installed in several ways:
 
 ### Using Cargo
 
@@ -22,8 +20,6 @@ cargo install netero
 
 ### Using Nix Flakes
 
-If you use Nix, you can install it with:
-
 ```bash
 nix profile add github:hashbangcore/netero
 ```
@@ -32,23 +28,21 @@ nix profile add github:hashbangcore/netero
 
 ## Environment Variables
 
-It is configured via environment variables.
+Netero is provider agnostic: it speaks to any OpenAI-compatible endpoint and ships without a
+built-in provider, so the destination is provided through configuration.
 
-### Default provider (`codestral`)
-
-* `CODE_API_KEY`
-  API key for the default provider.
-
-### Custom provider (OpenAI-compatible)
-
-* `NETERO_URL`
+* `NETERO_URL` (required)
   Chat completions endpoint URL.
 
-* `NETERO_MODEL`
-  Name of the selected model.
+* `NETERO_MODEL` (required)
+  Name of the model to use.
 
-* `NETERO_API_KEY`
-  Optional API key for the custom provider.
+* `NETERO_API_KEY` (optional)
+  API key, sent as a bearer token when the endpoint asks for one.
+
+* `NETERO_TRACE_SOCKET` (optional)
+  Path of the `--trace` debug socket. Defaults to `$XDG_RUNTIME_DIR/netero.trace.sock`,
+  or `/tmp/netero.trace.sock`.
 
 ---
 
@@ -309,8 +303,8 @@ netero --trace
 
 ```sh
 export NETERO_URL="https://api.example.com/v1/chat/completions"
-export NETERO_MODEL="my-model"
-export NETERO_API_KEY="your-api-key"
+export NETERO_MODEL="model"
+export NETERO_API_KEY="api-key"
 
 netero "Describe the CFS scheduling algorithm"
 ```
