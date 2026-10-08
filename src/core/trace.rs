@@ -8,7 +8,7 @@ use crate::util::env::env_var;
 const DEFAULT_TRACE_SOCKET_PATH: &str = "/tmp/netero.trace.sock";
 
 fn resolve_trace_socket_path() -> PathBuf {
-    if let Some(value) = env_var("TRACE_SOCKET_PATH") {
+    if let Some(value) = env_var("NETERO_TRACE_SOCKET") {
         return PathBuf::from(value);
     }
 
