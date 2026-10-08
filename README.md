@@ -120,9 +120,6 @@ netero --trace
 * `/add`
   Attaches files to the context.
 
-* `/trans`
-  Translates text.
-
 * `/eval`
   Evaluates an arithmetic expression.
 

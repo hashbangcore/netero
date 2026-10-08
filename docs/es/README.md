@@ -120,9 +120,6 @@ netero --trace
 * `/add`
   Adjunta archivos al contexto.
 
-* `/trans`
-  Traduce texto.
-
 * `/eval`
   Evalúa una expresión aritmética.
 
