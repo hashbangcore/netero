@@ -1,5 +1,5 @@
 use crate::core::Cli;
-use crate::utilities::env::env_var;
+use crate::util::env::env_var;
 
 /// Configuration resolved from environment variables and CLI flags.
 pub struct Config {

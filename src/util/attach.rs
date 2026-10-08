@@ -1,7 +1,7 @@
 use std::env;
 use std::fs;
 
-use super::args::{looks_like_path, split_args};
+use super::text::{indent_block, looks_like_path, split_args};
 
 /// File attachment extracted from user input.
 pub struct Attachment {
@@ -73,28 +73,6 @@ pub fn format_attachments(attachments: &[Attachment]) -> Option<String> {
         out.push('\n');
     }
     Some(out)
-}
-
-fn indent_block(content: &str, prefix: &str) -> String {
-    if content.is_empty() {
-        return String::new();
-    }
-    let mut out = String::new();
-    let mut lines = content.lines().peekable();
-    while let Some(line) = lines.next() {
-        out.push_str(prefix);
-        out.push_str(line);
-        if lines.peek().is_some() {
-            out.push('\n');
-        }
-    }
-    if content.ends_with('\n') {
-        if !out.is_empty() {
-            out.push('\n');
-        }
-        out.push_str(prefix);
-    }
-    out
 }
 
 /// Formats stdin and file attachments into a single attached files block.

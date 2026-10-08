@@ -56,3 +56,26 @@ pub fn looks_like_path(token: &str) -> bool {
         || token.starts_with("../")
         || token.starts_with("~/")
 }
+
+/// Prefixes every line of a block, preserving its trailing newline.
+pub fn indent_block(content: &str, prefix: &str) -> String {
+    if content.is_empty() {
+        return String::new();
+    }
+    let mut out = String::new();
+    let mut lines = content.lines().peekable();
+    while let Some(line) = lines.next() {
+        out.push_str(prefix);
+        out.push_str(line);
+        if lines.peek().is_some() {
+            out.push('\n');
+        }
+    }
+    if content.ends_with('\n') {
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        out.push_str(prefix);
+    }
+    out
+}

@@ -1,4 +1,4 @@
-use crate::utilities::exec::{Shell, run_shell};
+use crate::util::shell::{Shell, run_shell};
 
 use super::parse::extract_inline_commands;
 

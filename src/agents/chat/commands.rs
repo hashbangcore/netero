@@ -1,9 +1,8 @@
 use crate::core;
-use crate::utilities;
-use crate::utilities::attach;
-use crate::utilities::attach::Attachment;
-use crate::utilities::render;
-use crate::utilities::{lang_display_name, normalize_lang_tag, split_args};
+use crate::util;
+use crate::util::attach::{self, Attachment};
+use crate::util::terminal;
+use crate::util::{lang_display_name, normalize_lang_tag, split_args};
 use rustyline::Context;
 use rustyline::Helper;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};
@@ -99,7 +98,7 @@ impl Completer for CommandCompleter {
                     .map(|idx| inline_start + idx + 1)
                     .unwrap_or(inline_start);
                 let inline_token = &line[token_start..pos];
-                if utilities::looks_like_path(inline_token) {
+                if util::looks_like_path(inline_token) {
                     return self.file_completer.complete(line, pos, ctx);
                 }
                 if token_start == inline_start {
@@ -144,7 +143,7 @@ impl Completer for CommandCompleter {
                 return Ok((start, matches));
             }
         }
-        if utilities::looks_like_path(token) {
+        if util::looks_like_path(token) {
             return self.file_completer.complete(line, pos, ctx);
         }
 
@@ -291,7 +290,7 @@ pub async fn handle_trans(
         return Ok(true);
     }
 
-    let user_lang = normalize_lang_tag(&utilities::get_user_lang());
+    let user_lang = normalize_lang_tag(&util::get_user_lang());
     let target_lang = output_lang
         .as_deref()
         .map(normalize_lang_tag)
@@ -318,12 +317,12 @@ TEXT:
     );
 
     if args.verbose {
-        render::print_verbose(&prompt);
+        terminal::print_verbose(&prompt);
     }
 
     match service.complete(&prompt).await {
         Ok(text) => {
-            let output = render::render_markdown(&text);
+            let output = terminal::render_markdown(&text);
             println!("\n{}", output);
             Ok(true)
         }
@@ -342,8 +341,8 @@ pub async fn handle_save(
     };
     let raw_text = strip_inline_commands(rest).trim().to_string();
 
-    let datetime = utilities::current_datetime();
-    let user_lang = utilities::get_user_lang();
+    let datetime = util::current_datetime();
+    let user_lang = util::get_user_lang();
     let history_text = history.join("\n");
     let prompt = if raw_text.is_empty() {
         format!(
@@ -363,7 +362,7 @@ Chat history:\n\
     };
 
     if args.verbose {
-        render::print_verbose(&prompt);
+        terminal::print_verbose(&prompt);
     }
 
     let result = match service.complete(&prompt).await {

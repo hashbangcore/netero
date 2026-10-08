@@ -24,16 +24,8 @@ pub struct Cli {
     pub trace: bool,
 
     /// Force output format for prompt (plain | markdown)
-    #[arg(short = 'o', long, global = true)]
-    pub output: Option<OutputFormat>,
-}
-
-#[derive(clap::ValueEnum, Clone, Debug)]
-pub enum OutputFormat {
-    /// Render markdown to plain text (no ANSI codes)
-    Plain,
-    /// Keep raw markdown
-    Markdown,
+    #[arg(short = 'o', long, global = true, value_parser = ["plain", "markdown"])]
+    pub output: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]

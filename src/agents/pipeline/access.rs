@@ -1,6 +1,5 @@
 use crate::core;
-use crate::utilities;
-use crate::utilities::{attach, render};
+use crate::util::{self, attach, terminal};
 
 pub async fn dispatch(
     service: &core::Service,
@@ -8,8 +7,8 @@ pub async fn dispatch(
     request: &str,
     stdin: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let user_lang = utilities::get_user_lang();
-    let user_lang = utilities::normalize_lang_tag(&user_lang);
+    let user_lang = util::get_user_lang();
+    let user_lang = util::normalize_lang_tag(&user_lang);
     let attachments = attach::extract_attachments_from_input(request);
     let stdin_content = stdin;
     let attached_files = attach::format_attached_files(
@@ -34,13 +33,14 @@ pub async fn dispatch(
     let response = service.complete(&prompt).await?;
 
     if args.verbose {
-        render::print_labeled("USER", &prompt);
-        render::print_labeled("LLM", response.trim());
+        terminal::print_labeled("USER", &prompt);
+        terminal::print_labeled("LLM", response.trim());
     } else {
-        println!(
-            "{}",
-            render::render_markdown_with(&response, args.output.as_ref())
-        );
+        let output = args
+            .output
+            .as_deref()
+            .and_then(terminal::OutputFormat::from_name);
+        println!("{}", terminal::render_markdown_with(&response, output));
     }
 
     Ok(())

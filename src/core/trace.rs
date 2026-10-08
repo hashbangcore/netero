@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use terminal_size::terminal_size;
 use tokio::net::UnixDatagram;
 
-use crate::utilities::env::env_var;
+use crate::util::env::env_var;
 
 const DEFAULT_TRACE_SOCKET_PATH: &str = "/tmp/netero.trace.sock";
 

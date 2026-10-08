@@ -1,6 +1,6 @@
 mod agents;
 mod core;
-mod utilities;
+mod util;
 
 use agents as agent;
 use clap::CommandFactory;
@@ -9,8 +9,8 @@ use clap_complete::generate;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let stdin_is_piped = utilities::stdin_is_piped();
-    let stdin = utilities::get_stdin();
+    let stdin_is_piped = util::stdin_is_piped();
+    let stdin = util::get_stdin();
     let args = core::Cli::parse();
 
     if args.trace && (args.command.is_some() || !args.prompt.is_empty()) {

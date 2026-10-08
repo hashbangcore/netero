@@ -1,6 +1,5 @@
 use crate::core;
-use crate::utilities;
-use crate::utilities::{attach, render};
+use crate::util::{self, attach, terminal};
 
 use super::commands::{
     handle_add, handle_clean, handle_eval, handle_help, handle_save, handle_stream, handle_trans,
@@ -106,7 +105,7 @@ pub async fn dispatch(
             Some(merged_stdin)
         };
         let prompt = create_prompt(
-            &utilities::get_user_lang(),
+            &util::get_user_lang(),
             &dialog,
             &cleaned_input,
             command_output.as_deref(),
@@ -117,7 +116,7 @@ pub async fn dispatch(
         }
 
         if args.verbose {
-            render::print_verbose(&prompt);
+            terminal::print_verbose(&prompt);
         }
 
         // Use streaming mode when enabled by the user.
@@ -132,7 +131,7 @@ pub async fn dispatch(
         } else {
             match service.complete(&prompt).await {
                 Ok(text) => {
-                    let output = render::render_markdown(&text);
+                    let output = terminal::render_markdown(&text);
                     println!("\n{}", output);
                     text
                 }

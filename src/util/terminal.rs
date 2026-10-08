@@ -1,14 +1,32 @@
 use std::io::IsTerminal;
 use termimad::MadSkin;
 
-use crate::core::interface::OutputFormat;
-
 /// Resets terminal styling.
 const RESET: &str = "\x1b[0m";
 /// Turns on bold styling.
 const BOLD: &str = "\x1b[1m";
 /// Turns on green coloring.
 const GREEN: &str = "\x1b[32m";
+
+/// How model output should be formatted for display.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OutputFormat {
+    /// Render markdown to plain text (no ANSI codes)
+    Plain,
+    /// Keep raw markdown
+    Markdown,
+}
+
+impl OutputFormat {
+    /// Parses an output format name, returning `None` for unknown values.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name.trim().to_ascii_lowercase().as_str() {
+            "plain" => Some(Self::Plain),
+            "markdown" => Some(Self::Markdown),
+            _ => None,
+        }
+    }
+}
 
 /// Renders markdown to terminal-friendly output (auto-detects terminal).
 pub fn render_markdown(response: &str) -> String {
@@ -20,7 +38,7 @@ pub fn render_markdown(response: &str) -> String {
 }
 
 /// Renders markdown using a forced output format, ignoring terminal detection.
-pub fn render_markdown_with(response: &str, output: Option<&OutputFormat>) -> String {
+pub fn render_markdown_with(response: &str, output: Option<OutputFormat>) -> String {
     match output {
         Some(OutputFormat::Markdown) => response.to_string(),
         Some(OutputFormat::Plain) => {

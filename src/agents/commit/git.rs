@@ -1,4 +1,4 @@
-use crate::utilities::exec::{Shell, run_shell};
+use crate::util::shell::{Shell, run_shell};
 
 /// Collects git status and staged diff to give context to the model.
 pub fn staged_changes() -> String {
