@@ -89,8 +89,8 @@ impl Completer for CommandCompleter {
             .map(|idx| idx + 1)
             .unwrap_or(0);
         let token = &line[start..pos];
-        if let Some(inline_start) = find_inline_start(&line[..pos]) {
-            if is_inside_inline(&line[..pos], inline_start) {
+        if let Some(inline_start) = find_inline_start(&line[..pos])
+            && is_inside_inline(&line[..pos], inline_start) {
                 let inline_slice = &line[inline_start..pos];
                 let token_start = inline_slice
                     .rfind(|c: char| c.is_whitespace())
@@ -112,8 +112,8 @@ impl Completer for CommandCompleter {
                         .collect();
                     return Ok((token_start, matches));
                 }
-                if let Some((first, first_end)) = first_inline_token(line, inline_start, pos) {
-                    if first == "git" && token_start > first_end {
+                if let Some((first, first_end)) = first_inline_token(line, inline_start, pos)
+                    && first == "git" && token_start > first_end {
                         let matches = self
                             .git_subcommands
                             .iter()
@@ -125,9 +125,7 @@ impl Completer for CommandCompleter {
                             .collect();
                         return Ok((token_start, matches));
                     }
-                }
             }
-        }
         if start == 0 && token.starts_with('/') {
             let matches: Vec<Pair> = self
                 .commands
@@ -169,7 +167,7 @@ fn is_inside_inline(input: &str, start: usize) -> bool {
     true
 }
 
-fn first_inline_token<'a>(input: &'a str, start: usize, end: usize) -> Option<(&'a str, usize)> {
+fn first_inline_token(input: &str, start: usize, end: usize) -> Option<(&str, usize)> {
     let slice = &input[start..end];
     let trimmed = slice.trim_start();
     let leading_ws = slice.len() - trimmed.len();
