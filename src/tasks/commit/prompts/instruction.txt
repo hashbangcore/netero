@@ -9,14 +9,17 @@ Otherwise, generate a commit message following these rules:
 - Use imperative mode
 - Generate only raw text, no markdown
 - Format: <type>(optional-scope): <short_summary>
-- The CONVENTION section states which types and which scopes are valid.
-  Use only those, and no others.
-- Follow every rule the CONVENTION section states about how types and
-  scopes must be used.
+- The CONVENTION section defines the valid commit types and scopes.
+- Classify the staged changes according to the definitions and rules in
+  CONVENTION before generating the commit message.
+- Do not infer a type solely from the fact that something was added,
+  removed, or changed. Classify the purpose and impact of the change.
+- When CONVENTION provides explicit classification rules, those rules
+  take precedence over general assumptions about commit types.
 - A type always comes before the scope, and a value that is a valid type
   is never a valid scope. Never begin the subject with a scope value.
 - When in doubt about which scope applies, omit the scope
-- Keep the commit subject short, direct, technical (<= 50 chars)
+- Keep the commit subject short, direct, and technical, around 50 chars
 - Group related changes into a single bullet instead of one bullet per
   file
 - Add bullets only if they clarify key changes
