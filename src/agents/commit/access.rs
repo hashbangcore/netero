@@ -1,7 +1,7 @@
 use crate::core;
 
 use super::git::staged_changes;
-use super::utils::{prompt as prompt_for, comment, cover, normalize_commit_message};
+use super::utils::{comment, cover, normalize_commit_message, prompt as prompt_for};
 
 fn template(hint: Option<&str>, convention_text: &str) -> String {
     // Build a single prompt with all required sections.
@@ -49,9 +49,10 @@ pub async fn dispatch(
     let result = normalize_commit_message(&result);
 
     // TODO: manejar de forma más segura
-    match result.contains("Error: no changes staged for commit") {
-        true => println!("{}", result),
-        false => println!("{}\n\n\n{}", result.trim_end(), comment(&convention_text)),
+    if result.contains("Error: no changes staged for commit") {
+        println!("{}", result);
+    } else {
+        println!("{}\n\n\n{}", result.trim_end(), comment(&convention_text));
     }
 
     Ok(())

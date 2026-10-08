@@ -1,7 +1,5 @@
-/// Builds the chat prompt body from already-resolved user, datetime, history, and input values.
+/// Builds the chat prompt body from already-resolved language, history, and input values.
 pub fn create_prompt(
-    username: &str,
-    datetime: &str,
     user_lang: &str,
     history: &str,
     user_input: &str,
@@ -37,7 +35,7 @@ pub fn create_prompt(
     };
 
     format!(
-        "LLM ROL: Conversational terminal assistant\nUSERNAME: {}\nDATETIME: {}\nUSER LANG: {}\n\
+        "LLM ROL: Conversational terminal assistant\nUSER LANG: {}\n\
 :: INSTRUCTION (SYSTEM) ::\n\
 - Keep responses concise: 5-20 lines maximum.\n\
 - Do not use emojis or decorations.\n\
@@ -45,13 +43,13 @@ pub fn create_prompt(
 - The latest message may be completely unrelated to previous messages.\n\
 - Do not assume continuity or context from the history unless the user explicitly refers to it.\n\
 :: END INSTRUCTION (SYSTEM) ::\n\
-:: HISTORIAL CHAT (SYSTEM) ::\n\
+:: HISTORICAL CHAT (SYSTEM) ::\n\
 {}\n\
-:: END HISTORIAL CHAT (SYSTEM) ::\n\
+:: END HISTORICAL CHAT (SYSTEM) ::\n\
 {}\
 :: USER MESSAGE ::\n\
 {}\n\
 :: END USER MESSAGE ::",
-        username, datetime, user_lang, history, extra_block, user_input
+        user_lang, history, extra_block, user_input
     )
 }

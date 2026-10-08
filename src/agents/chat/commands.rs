@@ -1,6 +1,9 @@
 use crate::core;
-use crate::utils;
-use crate::utils::render;
+use crate::utilities;
+use crate::utilities::attach;
+use crate::utilities::attach::Attachment;
+use crate::utilities::render;
+use crate::utilities::{lang_display_name, normalize_lang_tag, split_args};
 use rustyline::Context;
 use rustyline::Helper;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};
@@ -12,8 +15,7 @@ use std::fs;
 use std::io::Write;
 
 use super::eval::{eval_expr, format_eval_error};
-use super::lang::{lang_display_name, normalize_lang_tag};
-use super::parse::{split_args, strip_inline_commands};
+use super::parse::strip_inline_commands;
 
 const HELP_TEXT: &str = "\nCommands:\n\
 /help  Show this help message\n\
@@ -97,11 +99,7 @@ impl Completer for CommandCompleter {
                     .map(|idx| inline_start + idx + 1)
                     .unwrap_or(inline_start);
                 let inline_token = &line[token_start..pos];
-                if inline_token.starts_with("./")
-                    || inline_token.starts_with("../")
-                    || inline_token.starts_with('/')
-                    || inline_token.starts_with("~/")
-                {
+                if utilities::looks_like_path(inline_token) {
                     return self.file_completer.complete(line, pos, ctx);
                 }
                 if token_start == inline_start {
@@ -146,26 +144,11 @@ impl Completer for CommandCompleter {
                 return Ok((start, matches));
             }
         }
-        if token.starts_with("./") || token.starts_with("../") || token.starts_with('/') {
+        if utilities::looks_like_path(token) {
             return self.file_completer.complete(line, pos, ctx);
         }
-        let prefix = &line[start..pos];
 
-        if !prefix.starts_with('/') {
-            return Ok((pos, Vec::new()));
-        }
-
-        let matches = self
-            .commands
-            .iter()
-            .filter(|cmd| cmd.starts_with(prefix))
-            .map(|cmd| Pair {
-                display: cmd.to_string(),
-                replacement: cmd.to_string(),
-            })
-            .collect();
-
-        Ok((start, matches))
+        Ok((pos, Vec::new()))
     }
 }
 
@@ -248,17 +231,13 @@ pub fn handle_add(
         return true;
     }
 
-    let mut attachment = String::new();
+    let mut attachments = Vec::new();
     for path in args {
         match fs::read_to_string(&path) {
             Ok(content) => {
-                attachment.push_str("\n-- FILE: ");
-                attachment.push_str(&path);
-                attachment.push_str(" --\n");
-                attachment.push_str(&content);
-                attachment.push('\n');
                 history.push(format!("Attachment: {}\n{}\n", path, content));
                 println!("\nadded: {}", path);
+                attachments.push(Attachment { path, content });
             }
             Err(err) => {
                 eprintln!("\nError reading {}: {}", path, err);
@@ -266,8 +245,11 @@ pub fn handle_add(
         }
     }
 
-    if !attachment.is_empty() {
-        *pending_stdin = Some(attachment);
+    if let Some(block) = attach::format_attachments(&attachments) {
+        *pending_stdin = Some(match pending_stdin.take() {
+            Some(existing) => existing + &block,
+            None => block,
+        });
     }
     true
 }
@@ -309,7 +291,7 @@ pub async fn handle_trans(
         return Ok(true);
     }
 
-    let user_lang = normalize_lang_tag(&utils::get_user_lang());
+    let user_lang = normalize_lang_tag(&utilities::get_user_lang());
     let target_lang = output_lang
         .as_deref()
         .map(normalize_lang_tag)
@@ -336,7 +318,7 @@ TEXT:
     );
 
     if args.verbose {
-        println!("\x1b[32m{}\x1b[0m", prompt);
+        render::print_verbose(&prompt);
     }
 
     match service.complete(&prompt).await {
@@ -360,8 +342,8 @@ pub async fn handle_save(
     };
     let raw_text = strip_inline_commands(rest).trim().to_string();
 
-    let datetime = utils::current_datetime();
-    let user_lang = utils::get_user_lang();
+    let datetime = utilities::current_datetime();
+    let user_lang = utilities::get_user_lang();
     let history_text = history.join("\n");
     let prompt = if raw_text.is_empty() {
         format!(
@@ -381,7 +363,7 @@ Chat history:\n\
     };
 
     if args.verbose {
-        println!("\x1b[32m{}\x1b[0m", prompt);
+        render::print_verbose(&prompt);
     }
 
     let result = match service.complete(&prompt).await {

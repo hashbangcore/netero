@@ -1,4 +1,4 @@
-use std::process::Command;
+use crate::utilities::exec::{Shell, run_shell};
 
 use super::parse::extract_inline_commands;
 
@@ -12,46 +12,27 @@ pub fn run_inline_commands(user_input: &str) -> Option<String> {
     let mut entries = Vec::new();
 
     for cmd in commands {
-        let output = Command::new("bash").args(["-lc", &cmd]).output();
+        let out = run_shell(&cmd, Shell::BashLogin);
 
-        match output {
-            Ok(out) => {
-                let stdout = String::from_utf8_lossy(&out.stdout).trim_end().to_string();
-                let stderr = String::from_utf8_lossy(&out.stderr).trim_end().to_string();
-
-                if out.status.success() {
-                    let stdout_display = if stdout.is_empty() {
-                        "<empty>"
-                    } else {
-                        &stdout
-                    };
-                    entries.push(format!(
-                        "[section]\n[command]\n{}\n\n[stdout]\n{}\n[end section]",
-                        cmd, stdout_display
-                    ));
-                    if !stderr.is_empty() {
-                        entries.push(format!("[stderr]\n{}", stderr));
-                    }
-                } else {
-                    let stderr_display = if stderr.is_empty() {
-                        "<empty>"
-                    } else {
-                        &stderr
-                    };
-                    let stdout_display = if stdout.is_empty() {
-                        "<empty>"
-                    } else {
-                        &stdout
-                    };
-                    entries.push(format!(
-                        "$({})\n[exit status]\n{}\n[stderr]\n{}\n[stdout]\n{}",
-                        cmd, out.status, stderr_display, stdout_display
-                    ));
+        match &out.error {
+            Some(err) => entries.push(format!("$({})\n[error]\n{}", cmd, err)),
+            None if out.success => {
+                entries.push(format!(
+                    "[section]\n[command]\n{}\n\n[stdout]\n{}\n[end section]",
+                    cmd,
+                    out.stdout_display()
+                ));
+                if !out.stderr.trim_end().is_empty() {
+                    entries.push(format!("[stderr]\n{}", out.stderr_display()));
                 }
             }
-            Err(err) => {
-                entries.push(format!("$({})\n[error]\n{}", cmd, err));
-            }
+            None => entries.push(format!(
+                "$({})\n[exit status]\n{}\n[stderr]\n{}\n[stdout]\n{}",
+                cmd,
+                out.status,
+                out.stderr_display(),
+                out.stdout_display()
+            )),
         }
     }
 

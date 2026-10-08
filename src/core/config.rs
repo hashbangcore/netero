@@ -1,4 +1,5 @@
 use crate::core::Cli;
+use crate::utilities::env::env_var;
 
 /// Configuration resolved from environment variables and CLI flags.
 pub struct Config {
@@ -12,26 +13,16 @@ impl Config {
     /// Loads configuration from environment variables with sensible defaults.
     pub fn from_env(args: &Cli) -> Self {
         // Read env vars only once to keep behavior consistent.
-        let url = std::env::var("NETERO_URL")
-            .ok()
-            .filter(|v| !v.trim().is_empty());
-
-        let model = std::env::var("NETERO_MODEL")
-            .ok()
-            .filter(|v| !v.trim().is_empty());
-
-        let key = std::env::var("NETERO_API_KEY")
-            .ok()
-            .filter(|v| !v.trim().is_empty());
+        let url = env_var("NETERO_URL");
+        let model = env_var("NETERO_MODEL");
+        let key = env_var("NETERO_API_KEY");
 
         let (endpoint, model, apikey) = match (url, model) {
             (Some(u), Some(m)) => (u, m, key),
             (None, None) => (
                 "https://codestral.mistral.ai/v1/chat/completions".to_string(),
                 "codestral-latest".to_string(),
-                std::env::var("CODE_API_KEY")
-                    .ok()
-                    .filter(|v| !v.trim().is_empty()),
+                env_var("CODE_API_KEY"),
             ),
             _ => panic!("NETERO_URL and NETERO_MODEL must be set together"),
         };

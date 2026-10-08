@@ -1,6 +1,6 @@
 use crate::core;
-use crate::utils;
-use crate::utils::{attach, render};
+use crate::utilities;
+use crate::utilities::{attach, render};
 
 use super::commands::{
     handle_add, handle_clean, handle_eval, handle_help, handle_save, handle_stream, handle_trans,
@@ -91,7 +91,7 @@ pub async fn dispatch(
         let dialog = history.join("\n");
         let command_output = run_inline_commands(&user_input);
         let cleaned_input = strip_inline_commands(&user_input);
-        let (cleaned_input, attachments) = attach::extract_attachments_from_input(&cleaned_input);
+        let attachments = attach::extract_attachments_from_input(&cleaned_input);
         let attachment_block = attach::format_attachments(&attachments);
         let mut merged_stdin = String::new();
         if let Some(existing) = pending_stdin.as_deref() {
@@ -106,9 +106,7 @@ pub async fn dispatch(
             Some(merged_stdin)
         };
         let prompt = create_prompt(
-            &utils::get_user(),
-            &utils::current_datetime(),
-            &utils::get_user_lang(),
+            &utilities::get_user_lang(),
             &dialog,
             &cleaned_input,
             command_output.as_deref(),
@@ -119,7 +117,7 @@ pub async fn dispatch(
         }
 
         if args.verbose {
-            println!("\x1b[32m{}\x1b[0m", prompt);
+            render::print_verbose(&prompt);
         }
 
         // Use streaming mode when enabled by the user.
@@ -146,7 +144,7 @@ pub async fn dispatch(
         };
 
         // Store the last exchange for future context.
-        history.push(format!("{}: {}", utils::get_user(), cleaned_input));
+        history.push(format!("User: {}", cleaned_input));
         history.push(format!("Assistant: {}\n", response));
     }
 }

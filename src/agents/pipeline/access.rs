@@ -1,6 +1,6 @@
 use crate::core;
-use crate::utils;
-use crate::utils::{attach, render};
+use crate::utilities;
+use crate::utilities::{attach, render};
 
 pub async fn dispatch(
     service: &core::Service,
@@ -8,10 +8,9 @@ pub async fn dispatch(
     request: &str,
     stdin: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let user_lang = utils::get_user_lang();
-    let user_lang = utils::normalize_lang_tag(&user_lang);
-    let user = utils::get_user();
-    let (cleaned_request, attachments) = attach::extract_attachments_from_input(request);
+    let user_lang = utilities::get_user_lang();
+    let user_lang = utilities::normalize_lang_tag(&user_lang);
+    let attachments = attach::extract_attachments_from_input(request);
     let stdin_content = stdin;
     let attached_files = attach::format_attached_files(
         if stdin_content.trim().is_empty() {
@@ -25,7 +24,7 @@ pub async fn dispatch(
     let mut prompt = format!(
         "USER LANG: {} !important\n:: USER HINT ::\n{}\n:: END USER HINT ::",
         user_lang,
-        cleaned_request.trim()
+        request.trim()
     );
     if let Some(block) = attached_files {
         prompt.push_str("\n\n");
@@ -35,8 +34,8 @@ pub async fn dispatch(
     let response = service.complete(&prompt).await?;
 
     if args.verbose {
-        println!("\x1b[1m{}:\x1b[0m\n\n{}\n", user.to_uppercase(), prompt);
-        println!("\x1b[1mLLM:\x1b[0m\n\n{}", response.trim());
+        render::print_labeled("USER", &prompt);
+        render::print_labeled("LLM", response.trim());
     } else {
         println!(
             "{}",

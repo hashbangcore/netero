@@ -1,16 +1,16 @@
-mod core;
 mod agents;
-mod utils;
+mod core;
+mod utilities;
 
+use agents as agent;
 use clap::CommandFactory;
 use clap::Parser;
 use clap_complete::generate;
-use agents as agent;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let stdin_is_piped = utils::stdin_is_piped();
-    let stdin = utils::get_stdin();
+    let stdin_is_piped = utilities::stdin_is_piped();
+    let stdin = utilities::get_stdin();
     let args = core::Cli::parse();
 
     if args.trace && (args.command.is_some() || !args.prompt.is_empty()) {
@@ -47,13 +47,16 @@ async fn execute(
             } else {
                 Some(hint.join(" "))
             };
-            agent::commit::dispatch(service, args, hint_text.as_deref(), convention.as_deref()).await?
+            agent::commit::dispatch(service, args, hint_text.as_deref(), convention.as_deref())
+                .await?
         }
         Some(core::Commands::Prompt { input }) => {
             let input_text = input.join(" ");
             agent::pipeline::dispatch(service, args, &input_text, stdin).await?
         }
-        Some(core::Commands::Chat) => agent::chat::dispatch(service, args, stdin, stdin_is_piped).await,
+        Some(core::Commands::Chat) => {
+            agent::chat::dispatch(service, args, stdin, stdin_is_piped).await
+        }
         Some(core::Commands::Completion { shell }) => {
             let mut cmd = core::Cli::command();
             generate(*shell, &mut cmd, "netero", &mut std::io::stdout());

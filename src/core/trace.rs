@@ -3,21 +3,17 @@ use std::path::{Path, PathBuf};
 use terminal_size::terminal_size;
 use tokio::net::UnixDatagram;
 
+use crate::utilities::env::env_var;
+
 const DEFAULT_TRACE_SOCKET_PATH: &str = "/tmp/netero.trace.sock";
 
 fn resolve_trace_socket_path() -> PathBuf {
-    if let Ok(value) = std::env::var("TRACE_SOCKET_PATH") {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            return PathBuf::from(trimmed);
-        }
+    if let Some(value) = env_var("TRACE_SOCKET_PATH") {
+        return PathBuf::from(value);
     }
 
-    if let Ok(value) = std::env::var("XDG_RUNTIME_DIR") {
-        let trimmed = value.trim();
-        if !trimmed.is_empty() {
-            return Path::new(trimmed).join("netero.trace.sock");
-        }
+    if let Some(value) = env_var("XDG_RUNTIME_DIR") {
+        return Path::new(&value).join("netero.trace.sock");
     }
 
     PathBuf::from(DEFAULT_TRACE_SOCKET_PATH)
