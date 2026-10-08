@@ -85,13 +85,13 @@ impl fmt::Display for ServiceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Transport { endpoint, source } => {
-                write!(f, "no se pudo conectar con {endpoint} ({source})")
+                write!(f, "could not connect to {endpoint} ({source})")
             }
             Self::Read { source } => {
-                write!(f, "la respuesta se cortó a medio leer ({source})")
+                write!(f, "the response was cut short while reading ({source})")
             }
             Self::Write { source } => {
-                write!(f, "no se pudo escribir la respuesta ({source})")
+                write!(f, "could not write the response ({source})")
             }
             Self::Http {
                 status,
@@ -113,14 +113,14 @@ impl fmt::Display for ServiceError {
                 }
             }
             Self::UnexpectedBody { reason, snippet } => {
-                write!(f, "respuesta no reconocida del endpoint ({reason})")?;
+                write!(f, "unrecognized response from the endpoint ({reason})")?;
                 if !snippet.is_empty() {
                     write!(f, "\n{snippet}")?;
                 }
                 Ok(())
             }
-            Self::NoChoices => f.write_str("la respuesta del endpoint no trae choices"),
-            Self::EmptyContent => f.write_str("el modelo devolvio una respuesta vacia"),
+            Self::NoChoices => f.write_str("the endpoint response carried no choices"),
+            Self::EmptyContent => f.write_str("the model returned an empty response"),
             Self::Config(message) => f.write_str(message),
         }
     }
@@ -138,10 +138,10 @@ impl Error for ServiceError {
 
 impl Service {
     pub fn new(args: &Cli) -> Result<Self, ServiceError> {
-        let config = Config::from_env(args)?;
+        let config = Config::from_env()?;
 
-        if config.verbose {
-            println!("modelo: {:#?}\nurl: {:#?}\n", config.model, config.endpoint);
+        if args.verbose {
+            println!("model: {:#?}\nurl: {:#?}\n", config.model, config.endpoint);
         }
 
         Ok(Self {
@@ -406,7 +406,7 @@ mod tests {
     fn reports_empty_content() {
         let err = parse_completion(r#"{"choices":[{"message":{"content":"   "}}]}"#).unwrap_err();
         assert!(matches!(err, ServiceError::EmptyContent));
-        assert_eq!(err.to_string(), "el modelo devolvio una respuesta vacia");
+        assert_eq!(err.to_string(), "the model returned an empty response");
     }
 
     #[test]

@@ -14,10 +14,10 @@ pub enum EvalError {
 /// Formats arithmetic parsing failures into user-facing messages.
 pub fn format_eval_error(err: EvalError) -> String {
     match err {
-        EvalError::Empty => "expresión vacía".to_string(),
-        EvalError::InvalidToken(ch) => format!("token inválido: '{}'", ch),
-        EvalError::MismatchedParens => "paréntesis desbalanceados".to_string(),
-        EvalError::DivisionByZero => "división por cero".to_string(),
+        EvalError::Empty => "empty expression".to_string(),
+        EvalError::InvalidToken(ch) => format!("invalid token: '{}'", ch),
+        EvalError::MismatchedParens => "unbalanced parentheses".to_string(),
+        EvalError::DivisionByZero => "division by zero".to_string(),
     }
 }
 

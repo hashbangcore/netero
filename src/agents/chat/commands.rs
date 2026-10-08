@@ -21,7 +21,7 @@ const HELP_TEXT: &str = "\nCommands:\n\
 /clean Clear chat history\n\
 /add   Attach file contents to chat context\n\
 /eval  Evaluate arithmetic expression\n\
-/save  Save an informe about the chat\n\
+/save  Save a summary of the chat\n\
 /stream [on|off] Toggle streaming output\n";
 
 /// Provides command name completions for slash-prefixed commands in the prompt.
@@ -285,7 +285,7 @@ pub async fn handle_save(
     let history_text = history.join("\n");
     let prompt = if raw_text.is_empty() {
         format!(
-            "Write an informe for the user.\n\
+            "Write a summary for the user.\n\
 Use the same language as the user.\n\
 Do not add footers, notes, or meta commentary.\n\
 Chat history:\n\
