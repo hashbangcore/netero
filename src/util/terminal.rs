@@ -30,7 +30,12 @@ impl OutputFormat {
 
 /// Renders markdown to terminal-friendly output (auto-detects terminal).
 pub fn render_markdown(response: &str) -> String {
-    if !std::io::stdout().is_terminal() {
+    render_markdown_auto(response, std::io::stdout().is_terminal())
+}
+
+/// Renders markdown depending on whether the destination is a terminal.
+fn render_markdown_auto(response: &str, is_tty: bool) -> String {
+    if !is_tty {
         return response.to_string();
     }
     let skin = MadSkin::default();
@@ -52,20 +57,27 @@ pub fn render_markdown_with(response: &str, output: Option<OutputFormat>) -> Str
 
 fn strip_ansi_codes(s: &str) -> String {
     let mut result = String::with_capacity(s.len());
-    let mut in_escape = false;
-    for c in s.chars() {
-        if in_escape {
-            if c == 'm' {
-                in_escape = false;
+    let mut chars = s.chars();
+
+    while let Some(c) = chars.next() {
+        if c != '\x1b' {
+            result.push(c);
+            continue;
+        }
+        match chars.next() {
+            // CSI sequences run until a final byte in the 0x40..=0x7e range.
+            Some('[') => {
+                for c in chars.by_ref() {
+                    if ('\x40'..='\x7e').contains(&c) {
+                        break;
+                    }
+                }
             }
-            continue;
+            Some(_) => {}
+            None => {}
         }
-        if c == '\x1b' {
-            in_escape = true;
-            continue;
-        }
-        result.push(c);
     }
+
     result
 }
 
@@ -77,4 +89,40 @@ pub fn print_verbose(text: &str) {
 /// Prints a bold label followed by a text block, used by verbose mode.
 pub fn print_labeled(label: &str, text: &str) {
     println!("{BOLD}{label}:{RESET}\n\n{text}");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_known_format_names() {
+        assert_eq!(OutputFormat::from_name("plain"), Some(OutputFormat::Plain));
+        assert_eq!(OutputFormat::from_name("PLAIN"), Some(OutputFormat::Plain));
+        assert_eq!(
+            OutputFormat::from_name(" markdown "),
+            Some(OutputFormat::Markdown)
+        );
+        assert_eq!(OutputFormat::from_name("bogus"), None);
+    }
+
+    #[test]
+    fn plain_output_has_no_ansi_codes() {
+        let rendered = render_markdown_with("un **texto**", Some(OutputFormat::Plain));
+        assert!(!rendered.contains('\x1b'), "output was {rendered:?}");
+        assert!(rendered.contains("texto"), "output was {rendered:?}");
+    }
+
+    #[test]
+    fn strips_ansi_sequences_without_eating_text() {
+        assert_eq!(strip_ansi_codes("\x1b[31mrojo\x1b[0m"), "rojo");
+        assert_eq!(strip_ansi_codes("antes\x1b[2Jdespues"), "antesdespues");
+        assert_eq!(strip_ansi_codes("sin escapes"), "sin escapes");
+    }
+
+    #[test]
+    fn piped_output_is_not_rendered() {
+        assert_eq!(render_markdown_auto("**crudo**", false), "**crudo**");
+        assert!(!render_markdown_auto("**crudo**", true).contains("**"));
+    }
 }

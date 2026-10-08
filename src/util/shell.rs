@@ -86,3 +86,55 @@ fn from_output(status: ExitStatus, stdout: &[u8], stderr: &[u8]) -> CommandOutpu
         error: None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn output(stdout: &str, stderr: &str) -> CommandOutput {
+        CommandOutput {
+            success: true,
+            status: "exit status: 0".to_string(),
+            stdout: stdout.to_string(),
+            stderr: stderr.to_string(),
+            error: None,
+        }
+    }
+
+    #[test]
+    fn empty_output_becomes_a_placeholder() {
+        let out = output("", "   \n");
+        assert_eq!(out.stdout_display(), "<empty>");
+        assert_eq!(out.stderr_display(), "<empty>");
+    }
+
+    #[test]
+    fn display_trims_trailing_whitespace() {
+        let out = output("hola\n\n", "  aviso  \n");
+        assert_eq!(out.stdout_display(), "hola");
+        assert_eq!(out.stderr_display(), "  aviso");
+    }
+
+    #[test]
+    fn captures_stdout_of_a_successful_command() {
+        let out = run_shell("echo hola", Shell::Posix);
+        assert!(out.success);
+        assert!(out.error.is_none());
+        assert_eq!(out.stdout, "hola\n");
+    }
+
+    #[test]
+    fn captures_stderr_of_a_failing_command() {
+        let out = run_shell("echo aviso >&2", Shell::Posix);
+        assert!(out.success);
+        assert_eq!(out.stdout, "");
+        assert_eq!(out.stderr, "aviso\n");
+    }
+
+    #[test]
+    fn reports_a_non_zero_exit_status() {
+        let out = run_shell("exit 3", Shell::Posix);
+        assert!(!out.success);
+        assert!(out.status.contains('3'), "status was {:?}", out.status);
+    }
+}

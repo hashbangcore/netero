@@ -79,3 +79,51 @@ pub fn indent_block(content: &str, prefix: &str) -> String {
     }
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn splits_quotes_and_escapes() {
+        assert_eq!(split_args(""), Vec::<String>::new());
+        assert_eq!(split_args("   "), Vec::<String>::new());
+        assert_eq!(split_args("lee dos.txt"), vec!["lee", "dos.txt"]);
+        assert_eq!(split_args("\"un archivo\" y"), vec!["un archivo", "y"]);
+        assert_eq!(split_args("a\\ b"), vec!["a b"]);
+        // An empty quoted token is dropped.
+        assert_eq!(split_args("\"\" x"), vec!["x"]);
+        // An unclosed quote swallows the rest of the input.
+        assert_eq!(split_args("\"sin cerrar"), vec!["sin cerrar"]);
+    }
+
+    #[test]
+    fn backslash_does_not_escape_inside_single_quotes() {
+        assert_eq!(split_args("'a\\b'"), vec!["a\\b"]);
+        assert_eq!(split_args("'con espacio'"), vec!["con espacio"]);
+    }
+
+    #[test]
+    fn detects_path_candidates() {
+        assert!(looks_like_path("/etc/hosts"));
+        assert!(looks_like_path("./src/main.rs"));
+        assert!(looks_like_path("../arriba"));
+        assert!(looks_like_path("~/notas.txt"));
+
+        assert!(!looks_like_path("notas.txt"));
+        assert!(!looks_like_path("src/main.rs"));
+        assert!(!looks_like_path(""));
+    }
+
+    #[test]
+    fn indents_every_line_and_keeps_the_trailing_newline() {
+        assert_eq!(indent_block("", "  "), "");
+        assert_eq!(indent_block("uno", "  "), "  uno");
+        assert_eq!(indent_block("uno\ndos\n", "  "), "  uno\n  dos\n  ");
+    }
+
+    #[test]
+    fn indents_blank_lines_too() {
+        assert_eq!(indent_block("uno\n\ndos", "  "), "  uno\n  \n  dos");
+    }
+}

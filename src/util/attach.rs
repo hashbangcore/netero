@@ -10,23 +10,28 @@ pub struct Attachment {
     pub content: String,
 }
 
-/// Expands a leading `~/` into the current home directory.
-fn expand_path(path: &str) -> String {
-    match path.strip_prefix("~/") {
-        Some(rest) => match env::var("HOME") {
-            Ok(home) => format!("{}/{}", home, rest),
-            Err(_) => path.to_string(),
-        },
-        None => path.to_string(),
+/// Expands a leading `~/` into the given home directory.
+fn expand_path(path: &str, home: Option<&str>) -> String {
+    match (path.strip_prefix("~/"), home) {
+        (Some(rest), Some(home)) => format!("{}/{}", home, rest),
+        _ => path.to_string(),
     }
 }
 
-fn read_file(path: &str) -> Option<String> {
-    fs::read_to_string(path).ok()
+/// Reads a path only when it is a regular file, ignoring directories and pipes.
+fn read_regular_file(path: &str) -> Option<String> {
+    match fs::metadata(path) {
+        Ok(meta) if meta.is_file() => fs::read_to_string(path).ok(),
+        _ => None,
+    }
 }
 
 /// Extracts file attachments from tokenized input.
-fn extract_attachments_from_tokens(tokens: &[String]) -> (Vec<String>, Vec<Attachment>) {
+fn extract_attachments_from_tokens(
+    tokens: &[String],
+    read: impl Fn(&str) -> Option<String>,
+    home: Option<&str>,
+) -> (Vec<String>, Vec<Attachment>) {
     let mut remaining = Vec::new();
     let mut attachments = Vec::new();
 
@@ -36,16 +41,12 @@ fn extract_attachments_from_tokens(tokens: &[String]) -> (Vec<String>, Vec<Attac
             continue;
         }
 
-        let expanded = expand_path(token);
-        match fs::metadata(&expanded) {
-            Ok(meta) if meta.is_file() => match read_file(&expanded) {
-                Some(content) => attachments.push(Attachment {
-                    path: token.clone(),
-                    content,
-                }),
-                None => remaining.push(token.clone()),
-            },
-            _ => remaining.push(token.clone()),
+        match read(&expand_path(token, home)) {
+            Some(content) => attachments.push(Attachment {
+                path: token.clone(),
+                content,
+            }),
+            None => remaining.push(token.clone()),
         }
     }
 
@@ -54,8 +55,10 @@ fn extract_attachments_from_tokens(tokens: &[String]) -> (Vec<String>, Vec<Attac
 
 /// Extracts file attachments from a raw input string.
 pub fn extract_attachments_from_input(input: &str) -> Vec<Attachment> {
+    let home = env::var("HOME").ok();
     let tokens = split_args(input);
-    let (_remaining, attachments) = extract_attachments_from_tokens(&tokens);
+    let (_remaining, attachments) =
+        extract_attachments_from_tokens(&tokens, read_regular_file, home.as_deref());
     attachments
 }
 
@@ -99,4 +102,101 @@ pub fn format_attached_files(stdin: Option<&str>, attachments: &[Attachment]) ->
     out.push_str(&sections.join("\n\n"));
     out.push_str("\n\n:: END ATTACHED FILES ::");
     Some(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Builds a fake reader that serves the given path/content pairs.
+    fn reader_for(files: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
+        let files = files.to_vec();
+        move |path| {
+            files
+                .iter()
+                .find(|(candidate, _)| *candidate == path)
+                .map(|(_, content)| content.to_string())
+        }
+    }
+
+    #[test]
+    fn extracts_only_readable_paths_and_keeps_the_original_token() {
+        let read = reader_for(&[("/etc/hosts", "127.0.0.1"), ("./notas.txt", "primera nota")]);
+        let tokens = split_args("lee /etc/hosts y ./notas.txt y nada");
+        let (remaining, attachments) = extract_attachments_from_tokens(&tokens, read, None);
+
+        assert_eq!(remaining, vec!["lee", "y", "y", "nada"]);
+        assert_eq!(attachments.len(), 2);
+        assert_eq!(attachments[0].path, "/etc/hosts");
+        assert_eq!(attachments[0].content, "127.0.0.1");
+        assert_eq!(attachments[1].path, "./notas.txt");
+        assert_eq!(attachments[1].content, "primera nota");
+    }
+
+    #[test]
+    fn unreadable_paths_stay_in_the_input() {
+        let read = reader_for(&[]);
+        let tokens = split_args("lee /no/existe.txt");
+        let (remaining, attachments) = extract_attachments_from_tokens(&tokens, read, None);
+
+        assert_eq!(remaining, vec!["lee", "/no/existe.txt"]);
+        assert!(attachments.is_empty());
+    }
+
+    #[test]
+    fn reads_the_expanded_path_but_keeps_the_token_in_the_attachment() {
+        let read = reader_for(&[("/home/netero/notas.txt", "contenido")]);
+        let tokens = split_args("lee ~/notas.txt");
+        let (remaining, attachments) =
+            extract_attachments_from_tokens(&tokens, read, Some("/home/netero"));
+
+        assert_eq!(remaining, vec!["lee"]);
+        assert_eq!(attachments[0].path, "~/notas.txt");
+        assert_eq!(attachments[0].content, "contenido");
+    }
+
+    #[test]
+    fn expands_home_only_when_available() {
+        assert_eq!(
+            expand_path("~/notas.txt", Some("/home/netero")),
+            "/home/netero/notas.txt"
+        );
+        assert_eq!(expand_path("~/notas.txt", None), "~/notas.txt");
+        assert_eq!(
+            expand_path("/etc/hosts", Some("/home/netero")),
+            "/etc/hosts"
+        );
+        assert_eq!(expand_path("notas.txt", Some("/home/netero")), "notas.txt");
+    }
+
+    #[test]
+    fn formats_attachments_as_file_blocks() {
+        assert!(format_attachments(&[]).is_none());
+
+        let attachments = vec![Attachment {
+            path: "notas.txt".to_string(),
+            content: "hola".to_string(),
+        }];
+        assert_eq!(
+            format_attachments(&attachments).as_deref(),
+            Some("\n-- FILE: notas.txt --\nhola\n")
+        );
+    }
+
+    #[test]
+    fn formats_stdin_before_attachments() {
+        assert!(format_attached_files(Some("  \n"), &[]).is_none());
+        assert!(format_attached_files(None, &[]).is_none());
+
+        let attachments = vec![Attachment {
+            path: "notas.txt".to_string(),
+            content: "uno\ndos".to_string(),
+        }];
+        let block = format_attached_files(Some("por pipe"), &attachments).unwrap();
+
+        assert!(block.starts_with(":: ATTACHED FILES ::\n\n-- FILE: STDIN --\n"));
+        assert!(block.contains("      por pipe"));
+        assert!(block.contains("-- FILE: notas.txt --\n      uno\n      dos"));
+        assert!(block.ends_with("\n\n:: END ATTACHED FILES ::"));
+    }
 }

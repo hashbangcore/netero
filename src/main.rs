@@ -10,7 +10,7 @@ use clap_complete::generate;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdin_is_piped = util::stdin_is_piped();
-    let stdin = util::get_stdin();
+    let stdin = util::get_stdin()?;
     let args = core::Cli::parse();
 
     if args.trace && (args.command.is_some() || !args.prompt.is_empty()) {
