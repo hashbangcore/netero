@@ -1,6 +1,6 @@
 //! Commit message generation task and helpers.
-pub mod action;
+pub mod access;
 mod git;
 mod utils;
 
-pub use action::dispatch;
+pub use access::dispatch;

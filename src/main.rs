@@ -1,13 +1,11 @@
 mod core;
-mod tasks;
+mod agents;
 mod utils;
 
 use clap::CommandFactory;
 use clap::Parser;
 use clap_complete::generate;
-use tasks::chat;
-use tasks::commit;
-use tasks::pipeline;
+use agents as agent;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,23 +47,23 @@ async fn execute(
             } else {
                 Some(hint.join(" "))
             };
-            commit::dispatch(service, args, hint_text.as_deref(), convention.as_deref()).await?
+            agent::commit::dispatch(service, args, hint_text.as_deref(), convention.as_deref()).await?
         }
         Some(core::Commands::Prompt { input }) => {
             let input_text = input.join(" ");
-            pipeline::connect(service, args, &input_text, stdin).await?
+            agent::pipeline::dispatch(service, args, &input_text, stdin).await?
         }
-        Some(core::Commands::Chat) => chat::connect(service, args, stdin, stdin_is_piped).await,
+        Some(core::Commands::Chat) => agent::chat::dispatch(service, args, stdin, stdin_is_piped).await,
         Some(core::Commands::Completion { shell }) => {
             let mut cmd = core::Cli::command();
             generate(*shell, &mut cmd, "netero", &mut std::io::stdout());
         }
         None => {
             if args.prompt.is_empty() {
-                chat::connect(service, args, stdin, stdin_is_piped).await;
+                agent::chat::dispatch(service, args, stdin, stdin_is_piped).await;
             } else {
                 let prompt_text = args.prompt.join(" ");
-                pipeline::connect(service, args, &prompt_text, stdin).await?;
+                agent::pipeline::dispatch(service, args, &prompt_text, stdin).await?;
             }
         }
     }

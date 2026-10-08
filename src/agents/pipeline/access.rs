@@ -1,9 +1,8 @@
 use crate::core;
-use crate::tasks::attach;
-use crate::tasks::render;
 use crate::utils;
+use crate::utils::{attach, render};
 
-pub async fn generate_message(
+pub async fn dispatch(
     service: &core::Service,
     args: &core::Cli,
     request: &str,

@@ -1,6 +1,6 @@
 use crate::core;
-use crate::tasks::render;
 use crate::utils;
+use crate::utils::render;
 use rustyline::Context;
 use rustyline::Helper;
 use rustyline::completion::{Completer, FilenameCompleter, Pair};

@@ -1,7 +1,6 @@
 use crate::core;
-use crate::tasks::attach;
-use crate::tasks::render;
 use crate::utils;
+use crate::utils::{attach, render};
 
 use super::commands::{
     handle_add, handle_clean, handle_eval, handle_help, handle_save, handle_stream, handle_trans,
@@ -13,7 +12,7 @@ use super::prompt::create_prompt;
 use super::stream::stream_completion;
 
 /// Starts the interactive chat session and handles all supported commands.
-pub async fn generate_chat(
+pub async fn dispatch(
     service: &core::Service,
     args: &core::Cli,
     stdin: String,
