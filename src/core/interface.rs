@@ -1,3 +1,5 @@
+use crate::util::terminal::OutputFormat;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -26,6 +28,13 @@ pub struct Cli {
     /// Force output format for prompt (plain | markdown)
     #[arg(short = 'o', long, global = true, value_parser = ["plain", "markdown"])]
     pub output: Option<String>,
+}
+
+impl Cli {
+    /// Returns the requested output format, if any.
+    pub fn output_format(&self) -> Option<OutputFormat> {
+        self.output.as_deref().and_then(OutputFormat::from_name)
+    }
 }
 
 #[derive(Subcommand, Debug)]

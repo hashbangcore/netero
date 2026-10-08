@@ -110,7 +110,8 @@ pub async fn dispatch(
 
         // Use streaming mode when enabled by the user.
         let response = if stream_enabled {
-            match service.complete_stream(&prompt).await {
+            let mut stdout = std::io::stdout();
+            match service.complete_stream(&prompt, &mut stdout).await {
                 Ok(text) => text,
                 Err(err) => {
                     eprintln!("AI error: {}", err);

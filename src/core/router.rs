@@ -1,11 +1,11 @@
 use std::error::Error;
 use std::fmt;
-use std::io::Write;
+use std::time::Duration;
 
+use crate::core::Cli;
+use crate::core::config::Config;
 use crate::core::trace::send_trace;
-use crate::core::{Cli, Config};
 
-use futures_util::StreamExt;
 use reqwest::Client;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -13,46 +13,54 @@ use serde::{Deserialize, Serialize};
 /// Maximum number of body characters kept in error messages.
 const SNIPPET_LIMIT: usize = 400;
 
+/// Seconds allowed for the TCP connection to be established.
+///
+/// A total timeout is deliberately not set: long answers and slow models are normal,
+/// while a connection that never completes is not.
+const CONNECT_TIMEOUT_SECS: u64 = 10;
+
 /// Holds everything needed to talk to an OpenAI-compatible endpoint.
 pub struct Service {
-    pub http: Client,
-    pub apikey: Option<String>,
-    pub endpoint: String,
-    pub model: String,
+    http: Client,
+    apikey: Option<String>,
+    endpoint: String,
+    model: String,
 }
 
 #[derive(Serialize)]
-pub struct Message {
-    pub role: String,
-    pub content: String,
+struct Message {
+    role: String,
+    content: String,
 }
 
 #[derive(Serialize)]
-pub struct ChatRequest {
-    pub model: String,
-    pub messages: Vec<Message>,
+struct ChatRequest {
+    model: String,
+    messages: Vec<Message>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub stream: Option<bool>,
+    stream: Option<bool>,
 }
 
 #[derive(Deserialize)]
-pub struct ChatResponse {
-    pub choices: Vec<Choice>,
+struct ChatResponse {
+    choices: Vec<Choice>,
 }
 
 #[derive(Deserialize)]
-pub struct Choice {
-    pub message: ResponseMessage,
+struct Choice {
+    message: ResponseMessage,
 }
 
 #[derive(Deserialize)]
-pub struct ResponseMessage {
-    pub content: String,
+struct ResponseMessage {
+    content: String,
 }
 
 /// Every way a request to the endpoint can fail, with a message meant to be read.
 #[derive(Debug)]
 pub enum ServiceError {
+    /// The HTTP client could not be built.
+    Client { source: reqwest::Error },
     /// The endpoint could not be reached.
     Transport {
         endpoint: String,
@@ -84,6 +92,9 @@ pub enum ServiceError {
 impl fmt::Display for ServiceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Client { source } => {
+                write!(f, "could not build the HTTP client ({source})")
+            }
             Self::Transport { endpoint, source } => {
                 write!(f, "could not connect to {endpoint} ({source})")
             }
@@ -129,7 +140,8 @@ impl fmt::Display for ServiceError {
 impl Error for ServiceError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::Transport { source, .. } | Self::Read { source } => Some(source),
+            Self::Client { source } | Self::Read { source } => Some(source),
+            Self::Transport { source, .. } => Some(source),
             Self::Write { source } => Some(source),
             _ => None,
         }
@@ -144,16 +156,26 @@ impl Service {
             println!("model: {:#?}\nurl: {:#?}\n", config.model, config.endpoint);
         }
 
+        let http = Client::builder()
+            .connect_timeout(Duration::from_secs(CONNECT_TIMEOUT_SECS))
+            .build()
+            .map_err(|source| ServiceError::Client { source })?;
+
         Ok(Self {
-            http: Client::new(),
+            http,
             apikey: config.apikey,
             endpoint: config.endpoint,
             model: config.model,
         })
     }
 
+    /// Returns the configured endpoint.
+    pub(crate) fn endpoint(&self) -> &str {
+        &self.endpoint
+    }
+
     /// Builds a chat completion request, optionally in streaming mode.
-    fn request(&self, content: &str, stream: Option<bool>) -> reqwest::RequestBuilder {
+    pub(crate) fn request(&self, content: &str, stream: Option<bool>) -> reqwest::RequestBuilder {
         let body = ChatRequest {
             model: self.model.clone(),
             messages: vec![Message {
@@ -199,113 +221,16 @@ impl Service {
         send_trace(":: RESPONSE ::", &content).await;
         Ok(content)
     }
-
-    /// Streams an answer to the terminal and returns the full text.
-    pub async fn complete_stream(&self, content: &str) -> Result<String, ServiceError> {
-        send_trace(":: REQUEST ::", content).await;
-
-        let response = self
-            .request(content, Some(true))
-            .send()
-            .await
-            .map_err(|source| ServiceError::Transport {
-                endpoint: self.endpoint.clone(),
-                source,
-            })?;
-
-        let status = response.status();
-
-        if !status.is_success() {
-            let body = response
-                .text()
-                .await
-                .map_err(|source| ServiceError::Read { source })?;
-            trace_failed_response(status, &body).await;
-            return parse_response(status, &body);
-        }
-
-        let mut stream = response.bytes_stream();
-        let mut content = String::new();
-        let mut buffer = String::new();
-        let mut malformed: Option<String> = None;
-        let mut stdout = std::io::stdout();
-
-        while let Some(item) = stream.next().await {
-            let chunk = item.map_err(|source| ServiceError::Read { source })?;
-            buffer.push_str(&String::from_utf8_lossy(&chunk));
-
-            // Chunks can split a line, so only complete lines are consumed.
-            while let Some(end) = buffer.find('\n') {
-                let line = buffer.drain(..=end).collect::<String>();
-                let line = line.trim();
-                if line.is_empty() {
-                    continue;
-                }
-                let Some(data) = line.strip_prefix("data:") else {
-                    continue;
-                };
-                let data = data.trim();
-                if data == "[DONE]" {
-                    return finish_stream(&mut stdout, content).await;
-                }
-                match serde_json::from_str::<serde_json::Value>(data) {
-                    Ok(parsed) => {
-                        let delta = parsed
-                            .pointer("/choices/0/delta/content")
-                            .and_then(|value| value.as_str())
-                            .unwrap_or("");
-                        if !delta.is_empty() {
-                            content.push_str(delta);
-                            stdout
-                                .write_all(delta.as_bytes())
-                                .map_err(|source| ServiceError::Write { source })?;
-                            stdout
-                                .flush()
-                                .map_err(|source| ServiceError::Write { source })?;
-                        }
-                    }
-                    Err(_) => malformed = Some(data.to_string()),
-                }
-            }
-        }
-
-        if content.is_empty() {
-            return Err(match malformed {
-                Some(payload) => ServiceError::UnexpectedBody {
-                    reason: "el stream no traia deltas".to_string(),
-                    snippet: payload,
-                },
-                None => ServiceError::EmptyContent,
-            });
-        }
-
-        finish_stream(&mut stdout, content).await
-    }
-}
-
-/// Closes a streamed answer with a newline.
-async fn finish_stream(
-    stdout: &mut std::io::Stdout,
-    content: String,
-) -> Result<String, ServiceError> {
-    stdout
-        .write_all(b"\n")
-        .map_err(|source| ServiceError::Write { source })?;
-    stdout
-        .flush()
-        .map_err(|source| ServiceError::Write { source })?;
-    send_trace(":: RESPONSE ::", &content).await;
-    Ok(content)
 }
 
 /// Records a failed response in the trace server.
-async fn trace_failed_response(status: StatusCode, body: &str) {
+pub(crate) async fn trace_failed_response(status: StatusCode, body: &str) {
     let entry = format!("{}\n{}", status, snippet(body, SNIPPET_LIMIT));
     send_trace(":: ERROR RESPONSE ::", &entry).await;
 }
 
 /// Interprets an endpoint response, turning failures into readable errors.
-fn parse_response(status: StatusCode, body: &str) -> Result<String, ServiceError> {
+pub(crate) fn parse_response(status: StatusCode, body: &str) -> Result<String, ServiceError> {
     if !status.is_success() {
         let message = error_message(body);
         return Err(ServiceError::Http {
