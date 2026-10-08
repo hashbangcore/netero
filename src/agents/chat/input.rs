@@ -11,7 +11,7 @@ pub fn new_editor() -> Editor<CommandCompleter, DefaultHistory> {
     let mut rl = Editor::<CommandCompleter, DefaultHistory>::new()
         .expect("failed to initialize rustyline editor");
     rl.set_helper(Some(CommandCompleter::new(vec![
-        "/clean", "/trans", "/eval", "/save", "/help", "/stream", "/add",
+        "/clean", "/eval", "/save", "/help", "/stream", "/add",
     ])));
     rl
 }

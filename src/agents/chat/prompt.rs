@@ -1,6 +1,5 @@
-/// Builds the chat prompt body from already-resolved language, history, and input values.
+/// Builds the chat prompt body from already-resolved history and input values.
 pub fn create_prompt(
-    user_lang: &str,
     history: &str,
     user_input: &str,
     command_output: Option<&str>,
@@ -22,7 +21,6 @@ pub fn create_prompt(
         None => String::new(),
     };
 
-    // NOTE: user_lang should reflect the OS locale (e.g., LANG/LC_ALL).
     let extra_sections = [command_section, stdin_section]
         .into_iter()
         .filter(|section| !section.is_empty())
@@ -35,7 +33,7 @@ pub fn create_prompt(
     };
 
     format!(
-        "LLM ROL: Conversational terminal assistant\nUSER LANG: {}\n\
+        "LLM ROL: Conversational terminal assistant\n\
 :: INSTRUCTION (SYSTEM) ::\n\
 - Keep responses concise: 5-20 lines maximum.\n\
 - Do not use emojis or decorations.\n\
@@ -50,6 +48,6 @@ pub fn create_prompt(
 :: USER MESSAGE ::\n\
 {}\n\
 :: END USER MESSAGE ::",
-        user_lang, history, extra_block, user_input
+        history, extra_block, user_input
     )
 }
