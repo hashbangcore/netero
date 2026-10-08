@@ -1,3 +1,12 @@
+pub fn prompt(prompt: &str) -> String {
+    match prompt {
+        "convention" => include_str!("prompts/convention.txt").to_string(),
+        "instruction" => include_str!("prompts/instruction.txt").to_string(),
+        "skeleton" => include_str!("prompts/skeleton.txt").to_string(),
+        _ => panic!("Unknown prompt: {prompt}"),
+    }
+}
+
 /// Wraps a section with start/end markers to help the model parse context.
 pub fn cover(title: &str, content: &str) -> String {
     let t = title.to_uppercase();

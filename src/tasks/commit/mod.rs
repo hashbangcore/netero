@@ -1,7 +1,6 @@
 //! Commit message generation task and helpers.
-mod format;
+pub mod action;
 mod git;
-mod prompts;
-pub mod task;
+mod utils;
 
-pub use task::generate_commit as connect;
+pub use action::dispatch;

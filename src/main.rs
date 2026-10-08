@@ -49,7 +49,7 @@ async fn execute(
             } else {
                 Some(hint.join(" "))
             };
-            commit::connect(service, args, hint_text.as_deref(), convention.as_deref()).await?
+            commit::dispatch(service, args, hint_text.as_deref(), convention.as_deref()).await?
         }
         Some(core::Commands::Prompt { input }) => {
             let input_text = input.join(" ");
