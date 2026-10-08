@@ -6,6 +6,5 @@ mod inline_exec;
 mod input;
 mod parse;
 mod prompt;
-mod stream;
 
 pub use access::dispatch;

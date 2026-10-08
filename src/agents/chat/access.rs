@@ -8,7 +8,6 @@ use super::inline_exec::run_inline_commands;
 use super::input::{new_editor, open_tty_reader, read_user_input};
 use super::parse::strip_inline_commands;
 use super::prompt::create_prompt;
-use super::stream::stream_completion;
 
 /// Starts the interactive chat session and handles all supported commands.
 pub async fn dispatch(
@@ -111,7 +110,7 @@ pub async fn dispatch(
 
         // Use streaming mode when enabled by the user.
         let response = if stream_enabled {
-            match stream_completion(service, &prompt).await {
+            match service.complete_stream(&prompt).await {
                 Ok(text) => text,
                 Err(err) => {
                     eprintln!("AI error: {}", err);

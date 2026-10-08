@@ -1,4 +1,5 @@
 use crate::core::Cli;
+use crate::core::router::ServiceError;
 use crate::util::env::env_var;
 
 /// Configuration resolved from environment variables and CLI flags.
@@ -11,7 +12,7 @@ pub struct Config {
 
 impl Config {
     /// Loads configuration from environment variables with sensible defaults.
-    pub fn from_env(args: &Cli) -> Self {
+    pub fn from_env(args: &Cli) -> Result<Self, ServiceError> {
         // Read env vars only once to keep behavior consistent.
         let url = env_var("NETERO_URL");
         let model = env_var("NETERO_MODEL");
@@ -24,14 +25,18 @@ impl Config {
                 "codestral-latest".to_string(),
                 env_var("CODE_API_KEY"),
             ),
-            _ => panic!("NETERO_URL and NETERO_MODEL must be set together"),
+            _ => {
+                return Err(ServiceError::Config(
+                    "NETERO_URL y NETERO_MODEL deben definirse juntos".to_string(),
+                ));
+            }
         };
 
-        Self {
+        Ok(Self {
             endpoint,
             model,
             apikey,
             verbose: args.verbose,
-        }
+        })
     }
 }

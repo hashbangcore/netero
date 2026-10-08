@@ -8,7 +8,14 @@ use clap::Parser;
 use clap_complete::generate;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
+    if let Err(err) = run().await {
+        eprintln!("Error: {err}");
+        std::process::exit(1);
+    }
+}
+
+async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let stdin_is_piped = util::stdin_is_piped();
     let stdin = util::get_stdin()?;
     let args = core::Cli::parse();
@@ -27,11 +34,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let service = core::Service::new(&args);
+    let service = core::Service::new(&args)?;
 
-    execute(&service, &args, stdin, stdin_is_piped).await?;
-
-    Ok(())
+    execute(&service, &args, stdin, stdin_is_piped).await
 }
 
 async fn execute(
