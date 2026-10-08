@@ -2,7 +2,7 @@ mod dist
 
 set unstable := true
 
-default: install
+default: watch
 
 release:
     just  release-info
@@ -37,3 +37,6 @@ test-envrc hint="true":
 
 show-code:
     find src -type f -exec sh -c 'for f; do echo "--- $f ---"; cat "$f"; done' sh {} + | larry "tree -I 'docs|target'" 
+
+watch task="check":
+    cargo watch -c -w src -x {{ task }}
